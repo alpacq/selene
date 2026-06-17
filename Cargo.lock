@@ -609,6 +609,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19f132c84eca552bf34cab8ec81f1c1dcc229b811638f9d283dceabe58c5569e"
 
 [[package]]
+name = "plots"
+version = "0.1.0"
+dependencies = [
+ "nalgebra",
+ "plotters",
+]
+
+[[package]]
 name = "plotters"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -741,7 +749,7 @@ version = "0.1.0"
 dependencies = [
  "math",
  "nalgebra",
- "plotters",
+ "plots",
  "sim",
 ]
 

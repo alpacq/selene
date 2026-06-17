@@ -8,10 +8,11 @@ members = [
     "crates/model",
     "crates/sim",
     "crates/math",
+    "crates/plots",
 ]
 
 [dependencies]
 nalgebra = "0.35.0"
 math = { path = "crates/math" }
 sim = { path = "crates/sim" }
-plotters = "0.3.7"
+plots = { path = "crates/plots" }
