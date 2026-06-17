@@ -32,13 +32,13 @@ where
     let number_of_steps = (duration / dt.seconds()) as usize;
     let mut time = 0.0_f64;
     let mut state = initial_state;
-    let mut input = initial_input;
+    let input = initial_input;
 
     let mut output = Vec::<DVector<f64>>::with_capacity(number_of_steps);
 
     for _ in 0..number_of_steps {
         state = rk4(state_equations, &state, &input, dt);
-        output.push(dvector![time, state[0], state[1]]);
+        output.push(dvector![time, state.state_vector[0], state.state_vector[1]]);
         time += dt.seconds();
     }
 
@@ -51,19 +51,19 @@ mod tests {
     use nalgebra::dvector;
 
     fn van_der_pol(x: &State, u: &Input) -> State {
-        let u = u[0];
-        let x1 = x[0];
-        let x2 = x[1];
+        let u = u.input_vector[0];
+        let x1 = x.state_vector[0];
+        let x2 = x.state_vector[1];
 
-        dvector![x2, u * (1.0 - x1 * x1) * x2 - x1]
+        State::new(2, dvector![x2, u * (1.0 - x1 * x1) * x2 - x1])
     }
 
     #[test]
     fn it_works() {
         let result = run(
             &van_der_pol,
-            dvector![0.1, 0.1],
-            dvector![0.8],
+            State::new(2, dvector![0.1, 0.1]),
+            Input::new(1, dvector![0.8]),
             1.0,
             &TimeStep::new(0.001),
         );

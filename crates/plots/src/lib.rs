@@ -1,6 +1,21 @@
+//! This module provides plotting utilities for the simulation results.
+
 use nalgebra::DVector;
 use plotters::prelude::*;
 
+/// General helper function to plot a 2D line series.
+///
+/// # Arguments
+///
+/// * `x_axis_values` - The values for the x-axis.
+/// * `y_axis_values` - The values for the y-axis.
+/// * `x_axis_label` - The label for the x-axis.
+/// * `y_axis_label` - The label for the y-axis.
+/// * `title` - The title of the plot.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the plot is successfully created, or an error if it fails.
 fn plot(
     x_axis_values: Vec<f64>,
     y_axis_values: Vec<f64>,
@@ -31,7 +46,7 @@ fn plot(
         .fold(f64::NEG_INFINITY, f64::max)
         + 1.0;
 
-    let root = BitMapBackend::new(name.as_str(), (1024, 768)).into_drawing_area();
+    let root = BitMapBackend::new(name.as_str(), (1920, 1080)).into_drawing_area();
     root.fill(&WHITE)?;
     let mut chart = ChartBuilder::on(&root)
         .caption(title, ("sans-serif", 24).into_font())
@@ -68,6 +83,16 @@ fn plot(
     Ok(())
 }
 
+/// Plots a phase portrait of the simulation results.
+///
+/// # Arguments
+///
+/// * `data` - The simulation results to plot.
+/// * `title` - The title of the plot.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the plot is successfully created, or an error if it fails.
 pub fn phase_portait(
     data: Vec<DVector<f64>>,
     title: String,

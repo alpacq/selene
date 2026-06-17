@@ -6,8 +6,8 @@ use sim::run;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let output = run(
         &van_der_pol,
-        dvector![0.1, 0.1],
-        dvector![0.8],
+        State::new(2, dvector![0.1, 0.1]),
+        Input::new(1, dvector![0.8]),
         60.0,
         &TimeStep::new(0.001),
     )?;
@@ -16,9 +16,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 pub fn van_der_pol(x: &State, u: &Input) -> State {
-    let u = u[0];
-    let x1 = x[0];
-    let x2 = x[1];
+    let u = u.input_vector[0];
+    let x1 = x.state_vector[0];
+    let x2 = x.state_vector[1];
 
-    dvector![x2, u * (1.0 - x1 * x1) * x2 - x1]
+    State::new(2, dvector![x2, u * (1.0 - x1 * x1) * x2 - x1])
 }

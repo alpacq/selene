@@ -23,11 +23,21 @@ where
     let dt_half = dt / 2.0;
 
     let k1 = state_equations(x, u);
-    let k2 = state_equations(&(x + &k1 * dt_half), u);
-    let k3 = state_equations(&(x + &k2 * dt_half), u);
-    let k4 = state_equations(&(x + &k3 * dt), u);
 
-    x + &(k1 + &k2 * 2.0 + &k3 * 2.0 + &k4) * (dt / 6.0)
+    let x2 = &x.state_vector + &k1.state_vector * dt_half;
+    let k2 = state_equations(&State::new(x.size, x2), u);
+
+    let x3 = &x.state_vector + &k2.state_vector * dt_half;
+    let k3 = state_equations(&State::new(x.size, x3), u);
+
+    let x4 = &x.state_vector + &k3.state_vector * dt;
+    let k4 = state_equations(&State::new(x.size, x4), u);
+
+    let result_vector = &x.state_vector
+        + &(k1.state_vector + &k2.state_vector * 2.0 + &k3.state_vector * 2.0 + &k4.state_vector)
+            * (dt / 6.0);
+
+    State::new(x.size, result_vector)
 }
 
 #[cfg(test)]
@@ -37,10 +47,10 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let state = dvector![0.0];
-        let input = dvector![0.0];
-        let state_equation = |x: &State, _u: &Input| dvector![x[0]];
+        let state = State::new(1, dvector![0.0]);
+        let input = Input::new(1, dvector![0.0]);
+        let state_equation = |x: &State, _u: &Input| State::new(1, dvector![x.state_vector[0]]);
         let result = rk4(state_equation, &state, &input, &TimeStep::new(0.001));
-        assert_eq!(result, dvector![0.0]);
+        assert_eq!(result, State::new(1, dvector![0.0]));
     }
 }
