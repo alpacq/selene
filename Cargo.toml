@@ -16,3 +16,4 @@ nalgebra = "0.35.0"
 math = { path = "crates/math" }
 sim = { path = "crates/sim" }
 plots = { path = "crates/plots" }
+model = { path = "crates/model" }

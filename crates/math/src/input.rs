@@ -4,25 +4,25 @@ use nalgebra::DVector;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Input {
-    pub size: usize,
     pub input_vector: DVector<f64>,
 }
 
 impl Input {
-    /// Creates a new `Input` with the given size and input vector.
+    /// Creates a new `Input` with the given input vector.
     ///
     /// # Arguments
     ///
-    /// * `size` - The size of the input vector.
     /// * `input_vector` - The input vector.
+    pub fn new(input_vector: DVector<f64>) -> Self {
+        Self { input_vector }
+    }
+
+    /// Returns the size of the input vector
     ///
-    /// # Panics
+    /// # Returns
     ///
-    /// Panics if `size` does not match `input_vector` length.
-    pub fn new(size: usize, input_vector: DVector<f64>) -> Self {
-        if size != input_vector.len() {
-            panic!("size must match input_vector length");
-        }
-        Self { size, input_vector }
+    /// The size of the input vector.
+    pub fn size(&self) -> usize {
+        self.input_vector.len()
     }
 }

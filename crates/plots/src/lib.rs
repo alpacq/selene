@@ -1,7 +1,7 @@
 //! This module provides plotting utilities for the simulation results.
 
-use nalgebra::DVector;
 use plotters::prelude::*;
+use sim::output::SimOutput;
 
 /// General helper function to plot a 2D line series.
 ///
@@ -24,6 +24,7 @@ fn plot(
     title: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let name = format!("{title}.png");
+    let label = format!("{y_axis_label}({x_axis_label})");
 
     let x_min = x_axis_values
         .iter()
@@ -69,7 +70,7 @@ fn plot(
                 .map(|(x, y)| (*x, *y)),
             &BLACK,
         ))?
-        .label("x2(x1)")
+        .label(label)
         .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLACK));
 
     chart
@@ -93,12 +94,9 @@ fn plot(
 /// # Returns
 ///
 /// Returns `Ok(())` if the plot is successfully created, or an error if it fails.
-pub fn phase_portait(
-    data: Vec<DVector<f64>>,
-    title: String,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let x_axis_values = data.iter().map(|d| d[1]).collect::<Vec<f64>>();
-    let y_axis_values = data.iter().map(|d| d[2]).collect::<Vec<f64>>();
+pub fn phase_portrait(data: SimOutput, title: String) -> Result<(), Box<dyn std::error::Error>> {
+    let x_axis_values = data.output_variable(0);
+    let y_axis_values = data.output_variable(1);
     let x_axis_label = "x1".into();
     let y_axis_label = "x2".into();
 

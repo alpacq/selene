@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 math = { path = "../math" }
 nalgebra = "0.35.0"
+model = { path = "../model" }
