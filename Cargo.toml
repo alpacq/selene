@@ -11,3 +11,7 @@ members = [
 ]
 
 [dependencies]
+nalgebra = "0.35.0"
+math = { path = "crates/math" }
+sim = { path = "crates/sim" }
+plotters = "0.3.7"
