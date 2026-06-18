@@ -26,24 +26,16 @@ fn plot(
     let name = format!("{title}.png");
     let label = format!("{y_axis_label}({x_axis_label})");
 
-    let x_min = x_axis_values
-        .iter()
-        .map(|x| *x)
-        .fold(f64::INFINITY, f64::min)
-        - 1.0;
+    let x_min = x_axis_values.iter().copied().fold(f64::INFINITY, f64::min) - 1.0;
     let x_max = x_axis_values
         .iter()
-        .map(|x| *x)
+        .copied()
         .fold(f64::NEG_INFINITY, f64::max)
         + 1.0;
-    let y_min = y_axis_values
-        .iter()
-        .map(|y| *y)
-        .fold(f64::INFINITY, f64::min)
-        - 1.0;
+    let y_min = y_axis_values.iter().copied().fold(f64::INFINITY, f64::min) - 1.0;
     let y_max = y_axis_values
         .iter()
-        .map(|y| *y)
+        .copied()
         .fold(f64::NEG_INFINITY, f64::max)
         + 1.0;
 
@@ -71,12 +63,12 @@ fn plot(
             &BLACK,
         ))?
         .label(label)
-        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLACK));
+        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], BLACK));
 
     chart
         .configure_series_labels()
-        .background_style(&WHITE.mix(0.8))
-        .border_style(&BLACK)
+        .background_style(WHITE.mix(0.8))
+        .border_style(BLACK)
         .draw()?;
 
     root.present()?;
@@ -95,8 +87,8 @@ fn plot(
 ///
 /// Returns `Ok(())` if the plot is successfully created, or an error if it fails.
 pub fn phase_portrait(data: SimOutput, title: String) -> Result<(), Box<dyn std::error::Error>> {
-    let x_axis_values = data.output_variable(0);
-    let y_axis_values = data.output_variable(1);
+    let x_axis_values = data.output_variable_at(0);
+    let y_axis_values = data.output_variable_at(1);
     let x_axis_label = "x1".into();
     let y_axis_label = "x2".into();
 

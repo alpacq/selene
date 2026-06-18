@@ -3,7 +3,7 @@
 pub struct SimOutput {
     /// Time vector [t0, t1, ..., tn]
     pub time: Vec<f64>,
-    /// Output vector [y0, y1, ..., yn]
+    /// Output vector [y0, y1, ..., yn] where y0 = [y00, y01, ..., y0m], y1 = [y10, y11, ..., y1m] etc
     pub output_vector: Vec<Vec<f64>>,
 }
 
@@ -13,7 +13,7 @@ impl SimOutput {
     /// # Arguments
     ///
     /// * `index` - The index of the output variable to return.
-    pub fn output_variable(&self, index: usize) -> Vec<f64> {
+    pub fn output_variable_at(&self, index: usize) -> Vec<f64> {
         self.output_vector.iter().map(|y| y[index]).collect()
     }
 
@@ -28,6 +28,10 @@ impl SimOutput {
     }
 
     /// Creates a new empty `SimOutput` with the given capacity.
+    ///
+    /// # Arguments
+    ///
+    /// * `capacity` - The capacity of the output vectors.
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             time: Vec::with_capacity(capacity),

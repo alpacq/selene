@@ -6,7 +6,7 @@ use model::Model;
 ///
 /// # Arguments
 ///
-/// * `state_equations` - The state equations to use for the simulation.
+/// * `model` - The model to use for the simulation.
 /// * `initial_state` - The initial state of the simulation.
 /// * `initial_input` - The initial input to the simulation.
 /// * `time` - The total time to simulate.
@@ -14,9 +14,7 @@ use model::Model;
 ///
 /// # Returns
 ///
-/// Returns `Ok(Vec<DVector<f64>>)` if the simulation completes successfully, or `Err` if an error occurs.
-/// Returned vector represents the simulation output, where first element of each DVector is the time,
-/// and the remaining elements are the state variables.
+/// Returns the simulation output.
 pub fn run(
     model: &dyn Model,
     initial_state: State,
