@@ -1,10 +1,15 @@
+mod aerodynamics;
+pub mod aircraft;
+pub mod airframeparams;
 mod atmosphere;
-pub mod fixedwingparams;
-pub mod model;
+pub mod dynamicmodel;
+mod engine;
+pub mod f16;
 pub mod transport;
 pub mod van_der_pol;
 
-pub use model::Model;
+pub use dynamicmodel::DynamicModel;
+pub use f16::F16;
 pub use transport::Transport;
 pub use van_der_pol::VanDerPol;
 

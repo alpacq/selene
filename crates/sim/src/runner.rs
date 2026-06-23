@@ -1,6 +1,6 @@
 use crate::output::SimOutput;
 use math::{input::Input, rk4::rk4, state::State, timestep::TimeStep};
-use model::Model;
+use model::DynamicModel;
 
 /// Runs the simulation for the given time step and returns the final state.
 ///
@@ -16,7 +16,7 @@ use model::Model;
 ///
 /// Returns the simulation output.
 pub fn run(
-    model: &dyn Model,
+    model: &dyn DynamicModel,
     initial_state: State,
     initial_input: Input,
     duration: f64,

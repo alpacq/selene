@@ -1,17 +1,21 @@
 /// Parameters for a fixed-wing aircraft model
-pub struct AircraftParams {
+pub struct AirframeParams {
     /// Reference wing area, m²
     pub s: f64,
+    /// Wing span, m
+    pub b: f64,
     /// Mean aerodynamic chord, m
     pub cbar: f64,
     /// Mass, kg
     pub mass: f64,
+    /// Roll-axis moment of inertia, kg·m²
+    pub ixx: f64,
     /// Pitch-axis moment of inertia, kg·m²
     pub iyy: f64,
-    /// Static thrust, N
-    pub tstat: f64,
-    /// Thrust derivative w.r.t. velocity, N/(m/s)
-    pub dtdv: f64,
+    /// Yaw-axis moment of inertia, kg·m²
+    pub izz: f64,
+    /// Roll-yaw moment of inertia, kg·m²
+    pub ixz: f64,
     /// Thrust line offset from CG, m
     pub ze: f64,
     /// Induced drag coefficient

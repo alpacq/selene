@@ -1,10 +1,10 @@
-use crate::model::Model;
+use crate::dynamicmodel::DynamicModel;
 use math::{input::Input, state::State};
 use nalgebra::dvector;
 
 pub struct VanDerPol {}
 
-impl Model for VanDerPol {
+impl DynamicModel for VanDerPol {
     fn state_equations(&self, x: &State, u: &Input) -> State {
         let u = u.input_vector[0];
         let x1 = x.state_vector[0];
