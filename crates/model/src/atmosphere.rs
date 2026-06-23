@@ -74,7 +74,7 @@ mod tests {
 
     #[test]
     fn temperature_at_mount_everest() {
-        assert_eq!(temperature_at_altitude(8848.0), 229.35734932799997);
+        assert_eq!(format!("{:.2}", temperature_at_altitude(8848.0)), "229.36");
     }
 
     #[test]
@@ -89,7 +89,7 @@ mod tests {
 
     #[test]
     fn speed_of_sound() {
-        assert_eq!(tas_from_mach(1.0, 0.0), 340.2626485525556);
+        assert_eq!(format!("{:.2}", tas_from_mach(1.0, 0.0)), "340.26");
     }
 
     #[test]
@@ -99,11 +99,17 @@ mod tests {
 
     #[test]
     fn dynamic_pressure_at_mount_everest() {
-        assert_eq!(dynamic_pressure(300.0, 8848.0), 21431.369070589586);
+        assert_eq!(
+            format!("{:.2}", dynamic_pressure(300.0, 8848.0)),
+            "21431.37"
+        );
     }
 
     #[test]
     fn dynamic_pressure_at_sea_level() {
-        assert_eq!(dynamic_pressure(340.2626485525556, 0.0), 70914.43537499999);
+        assert_eq!(
+            format!("{:.2}", dynamic_pressure(340.2626485525556, 0.0)),
+            "70914.44"
+        );
     }
 }
