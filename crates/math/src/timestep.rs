@@ -27,3 +27,19 @@ impl TimeStep {
         self.dt
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    #[should_panic]
+    fn panics_if_dt_is_not_positive() {
+        TimeStep::new(-1.0);
+    }
+
+    #[test]
+    fn seconds_return_correct_value() {
+        assert_eq!(TimeStep::new(0.5).seconds(), 0.5);
+    }
+}

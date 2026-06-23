@@ -26,3 +26,24 @@ impl State {
         self.state_vector.len()
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use nalgebra::dvector;
+
+    #[test]
+    fn four_element_vector_returns_size_four() {
+        let state = State::new(dvector![1.0, 2.0, 3.0, 4.0]);
+        assert_eq!(state.size(), 4);
+    }
+
+    #[test]
+    fn can_access_state_vector_elements() {
+        let state = State::new(dvector![1.0, 2.0, 3.0, 4.0]);
+        assert_eq!(state.state_vector[0], 1.0);
+        assert_eq!(state.state_vector[1], 2.0);
+        assert_eq!(state.state_vector[2], 3.0);
+        assert_eq!(state.state_vector[3], 4.0);
+    }
+}
