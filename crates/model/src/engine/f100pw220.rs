@@ -49,6 +49,7 @@ impl Engine for F100PW220 {
     /// (IDLE/MIL is up to 0.77 throttle value, and above it is MIL/MAX)
     /// MAX is with afterburner
     fn throttle_to_power(&self, throttle: f64) -> f64 {
+        let throttle = throttle.clamp(0.0, 1.0);
         if throttle <= 0.77 {
             throttle * 64.94
         } else {
@@ -60,6 +61,9 @@ impl Engine for F100PW220 {
     /// Dynamics is different for different ranges of throttle
     /// and for the direction of power change
     fn power_dynamics(&self, power: f64, set_power: f64) -> f64 {
+        let power = power.clamp(0.0, 100.0);
+        let set_power = set_power.clamp(0.0, 100.0);
+
         let (t, actual_set_power) = if set_power >= 50.0 {
             if power >= 50.0 {
                 (5.0, set_power)
@@ -81,16 +85,20 @@ impl Engine for F100PW220 {
     /// 50.0-100.0 MIL/MAX
     /// using thrust LUTs defined as constants for this engine
     fn thrust(&self, power: f64, altitude: f64, mach: f64) -> f64 {
+        let altitude = altitude.clamp(0.0, 15240.0);
+        let mach = mach.clamp(0.0, 0.8);
+        let power = power.clamp(0.0, 100.0);
+
         let altitude = altitude / 3048.0;
         let (altitude_index, altitude_remainder): (usize, f64) = if altitude >= 5.0 {
-            (4, altitude - 4.0)
+            (4, (altitude - 4.0).fract())
         } else {
             (altitude.floor() as usize, altitude - altitude.floor())
         };
         let altitude_complement = 1.0 - altitude_remainder;
         let mach = 5.0 * mach;
         let (mach_index, mach_remainder): (usize, f64) = if mach >= 5.0 {
-            (4, mach - 4.0)
+            (4, (mach - 4.0).fract())
         } else {
             (mach.floor() as usize, mach - mach.floor())
         };
@@ -110,14 +118,14 @@ impl Engine for F100PW220 {
                 * altitude_complement
                 + IDLE_THRUST_LUT[altitude_index + 1][mach_index + 1] * altitude_remainder;
             let idle_thrust = idle_thrust_s + (idle_thrust_t - idle_thrust_s) * mach_remainder;
-            idle_thrust * (military_thrust - idle_thrust) * power * 0.02
+            idle_thrust + (military_thrust - idle_thrust) * power * 0.02
         } else {
             let max_thrust_s = MAX_THRUST_LUT[altitude_index][mach_index] * altitude_complement
                 + MAX_THRUST_LUT[altitude_index + 1][mach_index] * altitude_remainder;
             let max_thrust_t = MAX_THRUST_LUT[altitude_index][mach_index + 1] * altitude_complement
                 + MAX_THRUST_LUT[altitude_index + 1][mach_index + 1] * altitude_remainder;
             let max_thrust = max_thrust_s + (max_thrust_t - max_thrust_s) * mach_remainder;
-            military_thrust * (max_thrust - military_thrust) * (power - 50.0) * 0.02
+            military_thrust + (max_thrust - military_thrust) * (power - 50.0) * 0.02
         }
     }
 
@@ -125,6 +133,7 @@ impl Engine for F100PW220 {
     /// between set and current power
     /// and slower for larger throttle changes
     fn tau_inverse(&self, delta_power: f64) -> f64 {
+        let delta_power = delta_power.clamp(0.0, 100.0);
         if delta_power <= 25.0 {
             1.0
         } else if delta_power >= 50.0 {
@@ -132,5 +141,90 @@ impl Engine for F100PW220 {
         } else {
             1.9 - 0.036 * delta_power
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn can_access_luts() {
+        assert_eq!(IDLE_THRUST_LUT[1][1], 1890.5);
+        assert_eq!(MIL_THRUST_LUT[3][5], 7384.0);
+        assert_eq!(MAX_THRUST_LUT[5][0], 128458.9);
+    }
+
+    #[test]
+    fn different_power_slopes() {
+        let f100pw220 = F100PW220::new();
+        assert_eq!(f100pw220.throttle_to_power(0.5), 0.5 * 64.94);
+        assert_eq!(f100pw220.throttle_to_power(0.8), 0.8 * 217.38 - 117.38);
+    }
+
+    #[test]
+    fn throttle_to_power_clamps_input() {
+        let f100pw220 = F100PW220::new();
+        assert_eq!(f100pw220.throttle_to_power(-1.0), 0.0);
+        assert_eq!(f100pw220.throttle_to_power(2.0), 1.0 * 217.38 - 117.38);
+    }
+
+    #[test]
+    fn tau_inverse_clamps_input() {
+        let f100pw220 = F100PW220::new();
+        assert_eq!(f100pw220.tau_inverse(-1.0), 1.0);
+        assert_eq!(f100pw220.tau_inverse(200.0), 0.1);
+    }
+
+    #[test]
+    fn tau_inverse_for_various_input_ranges() {
+        let f100pw220 = F100PW220::new();
+        assert_eq!(f100pw220.tau_inverse(0.0), 1.0);
+        assert_eq!(f100pw220.tau_inverse(30.0), 1.9 - 0.036 * 30.0);
+        assert_eq!(f100pw220.tau_inverse(50.0), 0.1);
+        assert_eq!(f100pw220.tau_inverse(100.0), 0.1);
+    }
+
+    #[test]
+    fn power_dynamics_clamps_input() {
+        let f100pw220 = F100PW220::new();
+        assert_eq!(f100pw220.power_dynamics(0.0, -1.0), 0.0);
+        assert_eq!(f100pw220.power_dynamics(200.0, 100.0), 0.0);
+        assert_eq!(f100pw220.power_dynamics(100.0, 200.0), 0.0);
+        assert_eq!(f100pw220.power_dynamics(-100.0, 0.0), 0.0);
+    }
+
+    #[test]
+    fn different_power_dynamics_slopes() {
+        let f100pw220 = F100PW220::new();
+        assert_eq!(f100pw220.power_dynamics(100.0, 10.0), 5.0 * (-60.0));
+        assert_eq!(
+            f100pw220.power_dynamics(0.0, 10.0),
+            f100pw220.tau_inverse(10.0) * 10.0
+        );
+        assert_eq!(f100pw220.power_dynamics(100.0, 100.0), 0.0);
+        assert_eq!(f100pw220.power_dynamics(50.0, 100.0), 5.0 * 50.0);
+        assert_eq!(
+            f100pw220.power_dynamics(0.0, 100.0),
+            f100pw220.tau_inverse(100.0) * 60.0
+        );
+    }
+
+    #[test]
+    fn thrust_clamps_input() {
+        let f100pw220 = F100PW220::new();
+        assert_eq!(f100pw220.thrust(-50.0, 0.0, 0.0), IDLE_THRUST_LUT[0][0]);
+        assert_eq!(f100pw220.thrust(0.0, -100.0, 0.0), IDLE_THRUST_LUT[0][0]);
+        assert_eq!(f100pw220.thrust(0.0, 0.0, -0.2), IDLE_THRUST_LUT[0][0]);
+        assert_eq!(f100pw220.thrust(200.0, 15240.0, 0.8), MAX_THRUST_LUT[4][4]);
+        assert_eq!(f100pw220.thrust(100.0, 34000.0, 0.8), MAX_THRUST_LUT[4][4]);
+        assert_eq!(f100pw220.thrust(100.0, 15240.0, 1.8), MAX_THRUST_LUT[4][4]);
+    }
+
+    #[test]
+    fn thrust_for_various_regimes() {
+        let f100pw220 = F100PW220::new();
+        assert_eq!(f100pw220.thrust(30.0, 0.0, 0.2), 25550.96); // IDLE/MIL
+        assert_eq!(f100pw220.thrust(85.0, 0.0, 0.2), 58916.67); // MIL/MAX
     }
 }
