@@ -1,0 +1,151 @@
+use crate::{
+    DynamicModel, GRAVITY, RAD_TO_DEG,
+    aircraft::Aircraft,
+    atmosphere::{dynamic_pressure, mach},
+    engine::Engine,
+};
+use math::{input::Input, state::State};
+use nalgebra::{DVector, dvector};
+
+pub struct FixedWing3DoFState(State);
+
+impl FixedWing3DoFState {
+    pub fn new(state_vector: DVector<f64>) -> Self {
+        Self(State::new(state_vector))
+    }
+
+    /// TAS [m/s]
+    pub fn vt(&self) -> f64 {
+        self.0.state_vector[0]
+    }
+
+    /// angle of attack [rad]
+    pub fn alpha(&self) -> f64 {
+        self.0.state_vector[1]
+    }
+
+    /// pitch angle [deg]
+    pub fn theta(&self) -> f64 {
+        self.0.state_vector[2]
+    }
+
+    /// pitch rate [deg/s]
+    pub fn q(&self) -> f64 {
+        self.0.state_vector[3]
+    }
+
+    /// altitude [m]
+    pub fn altitude(&self) -> f64 {
+        self.0.state_vector[4]
+    }
+}
+
+pub struct FixedWing3DoFInput(Input);
+
+impl FixedWing3DoFInput {
+    /// throttle position [0..1]
+    pub fn throttle(&self) -> f64 {
+        self.0.input_vector[0].clamp(0.0, 1.0)
+    }
+
+    /// elevator position [-1..1]
+    pub fn elevator(&self) -> f64 {
+        self.0.input_vector[1].clamp(-1.0, 1.0)
+    }
+
+    /// x-axis position of the center of gravity [m]
+    pub fn x_cg(&self) -> f64 {
+        self.0.input_vector[2]
+    }
+
+    /// landing gear position [0..1]
+    pub fn landing_gear_position(&self) -> f64 {
+        self.0.input_vector[3]
+    }
+}
+
+pub struct FixedWing3DOF;
+
+impl<E: Engine> DynamicModel<Aircraft<E>> for FixedWing3DOF {
+    type State = FixedWing3DoFState;
+    type Input = FixedWing3DoFInput;
+
+    fn state_equations(
+        &self,
+        system: &Aircraft<E>,
+        x: &Self::State,
+        u: &Self::Input,
+    ) -> Self::State {
+        let alpha_deg = RAD_TO_DEG * x.alpha();
+        let pressure = dynamic_pressure(x.vt(), x.altitude());
+        let mach = mach(x.vt(), x.altitude());
+
+        let qs = pressure * system.airframe.s; // static pressure times wing area, reference force for scaling aerodynamic forces
+
+        let gamma = x.theta() - x.alpha(); // flight path angle = pitch - angle of attack
+        let sin_gamma = gamma.sin();
+        let cos_gamma = gamma.cos();
+
+        let cl0 = if u.landing_gear_position() == 0.0 {
+            0.2
+        } else {
+            1.0
+        };
+        let cd0 = if u.landing_gear_position() == 0.0 {
+            0.016
+        } else {
+            0.08
+        };
+        let cm0 = if u.landing_gear_position() == 0.0 {
+            0.05
+        } else {
+            -0.2
+        };
+        let dcdg = if u.landing_gear_position() == 0.0 {
+            0.0
+        } else {
+            0.02
+        };
+        let dcmg = if u.landing_gear_position() == 0.0 {
+            0.0
+        } else {
+            -0.05
+        };
+
+        let thrust = system.engine.thrust(u.throttle(), x.altitude(), mach);
+        let cl = cl0 + system.airframe.cla * alpha_deg;
+        let cm = dcmg
+            + cm0
+            + system.airframe.cma * alpha_deg
+            + system.airframe.cmde * u.elevator()
+            + cl * (u.x_cg() - 0.25);
+        let cd = dcdg + cd0 + system.airframe.cdcls * cl * cl;
+
+        let x0_derivative =
+            (thrust * x.alpha().cos() - qs * cd) / system.airframe.mass - GRAVITY * sin_gamma; // vt'
+        let x1_derivative = (-thrust * x.alpha().sin() - qs * cl
+            + system.airframe.mass * (x.vt() * x.q() + GRAVITY * cos_gamma))
+            / (system.airframe.mass * x.vt() + qs * system.airframe.cladot); // alpha'
+        let x2_derivative = x.q(); // theta'
+
+        let pitch_damping = 0.5
+            * system.airframe.cbar
+            * (system.airframe.cmq * x.q() + system.airframe.cmadot * x1_derivative)
+            / x.vt(); // pitch damping
+
+        let x3_derivative = (qs * system.airframe.cbar * (cm + pitch_damping)
+            + thrust * system.airframe.ze)
+            / system.airframe.iyy; // q'
+        let x4_derivative = x.vt() * sin_gamma; // h'
+        let x5_derivative = x.vt() * cos_gamma; // x'
+
+        FixedWing3DoFState::new(dvector![
+            x0_derivative,
+            x1_derivative,
+            x2_derivative,
+            x3_derivative,
+            x4_derivative,
+            x5_derivative,
+        ])
+    }
+}

@@ -1,4 +1,4 @@
-use crate::{GAMMA, GC, R0};
+use crate::{GAMMA, GAS_CONSTANT, R0};
 
 /// Returns the dynamic pressure for given true air speed and altitude
 ///
@@ -31,7 +31,7 @@ pub fn dynamic_pressure(vt: f64, altitude: f64) -> f64 {
 pub fn mach(vt: f64, altitude: f64) -> f64 {
     let temperature = temperature_at_altitude(altitude);
 
-    vt / ((GAMMA * GC * temperature).sqrt())
+    vt / ((GAMMA * GAS_CONSTANT * temperature).sqrt())
 }
 
 /// Returns the true air speed for given mach number and altitude
@@ -47,7 +47,7 @@ pub fn mach(vt: f64, altitude: f64) -> f64 {
 pub fn tas_from_mach(mach: f64, altitude: f64) -> f64 {
     let temperature = temperature_at_altitude(altitude);
 
-    mach * ((GAMMA * GC * temperature).sqrt())
+    mach * ((GAMMA * GAS_CONSTANT * temperature).sqrt())
 }
 
 /// Returns the temperature at a given altitude

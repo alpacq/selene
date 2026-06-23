@@ -20,10 +20,10 @@ const R0: f64 = 1.225;
 const GAMMA: f64 = 1.4;
 
 /// air gas constant // J / (kg * K)
-const GC: f64 = 287.0;
+const GAS_CONSTANT: f64 = 287.0;
 
 /// Gravitational acceleration constant (m / s^2)
-const GD: f64 = 9.80665;
+const GRAVITY: f64 = 9.80665;
 
 /// Radians to degrees conversion factor
-const RTOD: f64 = 57.29578;
+const RAD_TO_DEG: f64 = 57.29578;
