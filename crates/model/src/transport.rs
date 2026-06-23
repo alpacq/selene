@@ -2,7 +2,7 @@ use crate::{
     GD, RTOD,
     aircraft::Aircraft,
     airframeparams::AirframeParams,
-    atmosphere::{air_pressure, mach},
+    atmosphere::{dynamic_pressure, mach},
     dynamicmodel::DynamicModel,
     engine::{Engine, staticthrust::StaticThrust},
 };
@@ -61,7 +61,7 @@ impl DynamicModel for Transport {
         let altitude = x.state_vector[4]; // altitude [m]
 
         let alpha_deg = RTOD * alpha;
-        let pressure = air_pressure(vt, altitude);
+        let pressure = dynamic_pressure(vt, altitude);
         let mach = mach(vt, altitude);
 
         let qs = pressure * self.airframe.s; // static pressure times wing area, reference force for scaling aerodynamic forces

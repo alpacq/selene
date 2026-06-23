@@ -2,7 +2,7 @@ use crate::{
     DynamicModel,
     aircraft::Aircraft,
     airframeparams::AirframeParams,
-    atmosphere::{air_pressure, mach},
+    atmosphere::{dynamic_pressure, mach},
     engine::f100pw220::F100PW220,
 };
 use math::{input::Input, state::State};
@@ -66,7 +66,7 @@ impl DynamicModel for F16 {
             + (self.airframe.ixz * self.airframe.ixz);
         let ypr = self.airframe.izz - self.airframe.ixx;
 
-        let pressure = air_pressure(vt, altitude);
+        let pressure = dynamic_pressure(vt, altitude);
         let mach = mach(vt, altitude);
 
         State::new(dvector![0.0])

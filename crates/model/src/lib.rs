@@ -14,7 +14,7 @@ pub use transport::Transport;
 pub use van_der_pol::VanDerPol;
 
 /// Sea-level air density [kg/m^3]
-const R0: f64 = 1225.0;
+const R0: f64 = 1.225;
 
 /// air adiabatic constant
 const GAMMA: f64 = 1.4;

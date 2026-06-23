@@ -1,6 +1,6 @@
 use crate::{GAMMA, GC, R0};
 
-/// Returns the pressure for given true air speed and altitude
+/// Returns the dynamic pressure for given true air speed and altitude
 ///
 /// # Arguments
 ///
@@ -10,7 +10,7 @@ use crate::{GAMMA, GC, R0};
 /// # Returns
 ///
 /// * `pressure` - pressure [Pa] and mach number [-]
-pub fn air_pressure(vt: f64, altitude: f64) -> f64 {
+pub fn dynamic_pressure(vt: f64, altitude: f64) -> f64 {
     let temperature_drop_factor = 1.0 - 2.306e-5 * altitude; // temperature drop factor
 
     let rho = R0 * temperature_drop_factor.powf(4.14);
@@ -50,11 +50,60 @@ pub fn tas_from_mach(mach: f64, altitude: f64) -> f64 {
     mach * ((GAMMA * GC * temperature).sqrt())
 }
 
+/// Returns the temperature at a given altitude
+///
+/// # Arguments
+///
+/// * `altitude` - altitude [m]
+///
+/// # Returns
+///
+/// * `temperature` - temperature [K]
 fn temperature_at_altitude(altitude: f64) -> f64 {
     let temperature_drop_factor = 1.0 - 2.306e-5 * altitude; // temperature drop factor
     if altitude >= 10668.0 {
         216.5
     } else {
         288.15 * temperature_drop_factor
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn temperature_at_mount_everest() {
+        assert_eq!(temperature_at_altitude(8848.0), 229.35734932799997);
+    }
+
+    #[test]
+    fn temperature_at_airliner_cruising_altitude() {
+        assert_eq!(temperature_at_altitude(11000.0), 216.5);
+    }
+
+    #[test]
+    fn temperature_at_sea_level() {
+        assert_eq!(temperature_at_altitude(0.0), 288.15);
+    }
+
+    #[test]
+    fn speed_of_sound() {
+        assert_eq!(tas_from_mach(1.0, 0.0), 340.2626485525556);
+    }
+
+    #[test]
+    fn mach_number() {
+        assert_eq!(mach(340.2626485525556, 0.0), 1.0);
+    }
+
+    #[test]
+    fn dynamic_pressure_at_mount_everest() {
+        assert_eq!(dynamic_pressure(300.0, 8848.0), 21431.369070589586);
+    }
+
+    #[test]
+    fn dynamic_pressure_at_sea_level() {
+        assert_eq!(dynamic_pressure(340.2626485525556, 0.0), 101325.0);
     }
 }
