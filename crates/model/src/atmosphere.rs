@@ -104,6 +104,6 @@ mod tests {
 
     #[test]
     fn dynamic_pressure_at_sea_level() {
-        assert_eq!(dynamic_pressure(340.2626485525556, 0.0), 101325.0);
+        assert_eq!(dynamic_pressure(340.2626485525556, 0.0), 70914.43537499999);
     }
 }
