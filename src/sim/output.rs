@@ -1,5 +1,6 @@
 //! Output data from a simulation.
 
+#[derive(Default)]
 pub struct SimOutput {
     /// Time vector [t0, t1, ..., tn]
     pub time: Vec<f64>,
@@ -18,11 +19,19 @@ impl SimOutput {
     }
 
     /// Returns the number of time steps.
+    ///
+    /// # Returns
+    ///
+    /// The number of time steps.
     pub fn len(&self) -> usize {
         self.time.len()
     }
 
     /// Returns whether the output is empty.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the output is empty, `false` otherwise.
     pub fn is_empty(&self) -> bool {
         self.time.is_empty()
     }

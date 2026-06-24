@@ -2,6 +2,8 @@
 
 use nalgebra::DVector;
 
+use crate::math::{IntegrableState, SizedVector};
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct State {
     pub state_vector: DVector<f64>,
@@ -16,14 +18,31 @@ impl State {
     pub fn new(state_vector: DVector<f64>) -> Self {
         Self { state_vector }
     }
+}
 
+impl SizedVector for State {
     /// Returns the size of the state vector
     ///
     /// # Returns
     ///
     /// The size of the state vector.
-    pub fn size(&self) -> usize {
+    fn size(&self) -> usize {
         self.state_vector.len()
+    }
+
+    /// Returns the state vector.
+    ///
+    /// # Returns
+    ///
+    /// The state vector.
+    fn vector(&self) -> DVector<f64> {
+        self.state_vector.clone()
+    }
+}
+
+impl IntegrableState for State {
+    fn from_vector(vector: DVector<f64>) -> Self {
+        Self::new(vector)
     }
 }
 

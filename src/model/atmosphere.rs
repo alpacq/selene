@@ -1,4 +1,4 @@
-use crate::{GAMMA, GAS_CONSTANT, R0};
+use crate::model::{GAMMA, GAS_CONSTANT, R0};
 
 /// Returns the dynamic pressure for given true air speed and altitude
 ///

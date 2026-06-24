@@ -1,10 +1,12 @@
 use crate::{
-    DynamicModel, GRAVITY, RAD_TO_DEG,
-    aircraft::Aircraft,
-    atmosphere::{dynamic_pressure, mach},
-    engine::Engine,
+    math::{IntegrableState, SizedVector, input::Input, state::State},
+    model::{
+        DynamicModel, GRAVITY, RAD_TO_DEG,
+        aircraft::Aircraft,
+        atmosphere::{dynamic_pressure, mach},
+        engine::Engine,
+    },
 };
-use math::{input::Input, state::State};
 use nalgebra::{DVector, dvector};
 
 pub struct FixedWing3DoFState(State);
@@ -40,6 +42,32 @@ impl FixedWing3DoFState {
     }
 }
 
+impl SizedVector for FixedWing3DoFState {
+    /// Returns the size of the state vector
+    ///
+    /// # Returns
+    ///
+    /// The size of the state vector.
+    fn size(&self) -> usize {
+        self.0.size()
+    }
+
+    /// Returns the state vector.
+    ///
+    /// # Returns
+    ///
+    /// The state vector.
+    fn vector(&self) -> DVector<f64> {
+        self.0.vector()
+    }
+}
+
+impl IntegrableState for FixedWing3DoFState {
+    fn from_vector(vector: DVector<f64>) -> Self {
+        FixedWing3DoFState::new(vector)
+    }
+}
+
 pub struct FixedWing3DoFInput(Input);
 
 impl FixedWing3DoFInput {
@@ -64,6 +92,29 @@ impl FixedWing3DoFInput {
     }
 }
 
+impl SizedVector for FixedWing3DoFInput {
+    /// Returns the size of the input vector
+    ///
+    /// # Returns
+    ///
+    /// The size of the input vector.
+    fn size(&self) -> usize {
+        self.0.size()
+    }
+
+    /// Returns the input vector.
+    ///
+    /// # Returns
+    ///
+    /// The input vector.
+    fn vector(&self) -> DVector<f64> {
+        self.0.vector()
+    }
+}
+
+/// Simple longitudinal 3 degrees of freedom model
+/// of a fixed-wing aircraft
+/// translation and pitching motion in the vertical plane
 pub struct FixedWing3DOF;
 
 impl<E: Engine> DynamicModel<Aircraft<E>> for FixedWing3DOF {
@@ -147,5 +198,9 @@ impl<E: Engine> DynamicModel<Aircraft<E>> for FixedWing3DOF {
             x4_derivative,
             x5_derivative,
         ])
+    }
+
+    fn system_rank(&self) -> usize {
+        5
     }
 }

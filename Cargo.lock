@@ -456,13 +456,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "953f07c43838f8e6f9758cab68bf5bed85465e7587ebe0b823f1bcd81978ad3a"
 
 [[package]]
-name = "math"
-version = "0.1.0"
-dependencies = [
- "nalgebra",
-]
-
-[[package]]
 name = "matrixmultiply"
 version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -480,14 +473,6 @@ checksum = "1fa76a2c86f704bdb222d66965fb3d63269ce38518b83cb0575fca855ebb6316"
 dependencies = [
  "adler2",
  "simd-adler32",
-]
-
-[[package]]
-name = "model"
-version = "0.1.0"
-dependencies = [
- "math",
- "nalgebra",
 ]
 
 [[package]]
@@ -611,14 +596,6 @@ name = "pkg-config"
 version = "0.3.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19f132c84eca552bf34cab8ec81f1c1dcc229b811638f9d283dceabe58c5569e"
-
-[[package]]
-name = "plots"
-version = "0.1.0"
-dependencies = [
- "plotters",
- "sim",
-]
 
 [[package]]
 name = "plotters"
@@ -751,11 +728,8 @@ dependencies = [
 name = "selene"
 version = "0.1.0"
 dependencies = [
- "math",
- "model",
  "nalgebra",
- "plots",
- "sim",
+ "plotters",
 ]
 
 [[package]]
@@ -769,15 +743,6 @@ name = "shlex"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
-
-[[package]]
-name = "sim"
-version = "0.1.0"
-dependencies = [
- "math",
- "model",
- "nalgebra",
-]
 
 [[package]]
 name = "simba"

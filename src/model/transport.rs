@@ -1,10 +1,9 @@
-use crate::{
+use crate::model::{
     aircraft::Aircraft, airframeparams::AirframeParams, engine::staticthrust::StaticThrust,
 };
 
-/// Simple longitudinal model of a medium size transport fixed-wing aircraft
+/// Simple model of a medium size transport fixed-wing aircraft
 /// powered by two turboprop engines
-/// only 3-DoF !!! - translation and pitching motion in the vertical plane
 pub type Transport = Aircraft<StaticThrust>;
 
 impl Transport {

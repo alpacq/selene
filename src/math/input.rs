@@ -2,6 +2,8 @@
 
 use nalgebra::DVector;
 
+use crate::math::SizedVector;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Input {
     pub input_vector: DVector<f64>,
@@ -16,14 +18,25 @@ impl Input {
     pub fn new(input_vector: DVector<f64>) -> Self {
         Self { input_vector }
     }
+}
 
+impl SizedVector for Input {
     /// Returns the size of the input vector
     ///
     /// # Returns
     ///
     /// The size of the input vector.
-    pub fn size(&self) -> usize {
+    fn size(&self) -> usize {
         self.input_vector.len()
+    }
+
+    /// Returns the input vector.
+    ///
+    /// # Returns
+    ///
+    /// The input vector.
+    fn vector(&self) -> DVector<f64> {
+        self.input_vector.clone()
     }
 }
 

@@ -1,7 +1,7 @@
 //! This module provides plotting utilities for the simulation results.
 
+use crate::sim::output::SimOutput;
 use plotters::prelude::*;
-use sim::output::SimOutput;
 
 /// General helper function to plot a 2D line series.
 ///

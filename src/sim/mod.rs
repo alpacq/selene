@@ -1,5 +1,5 @@
 //! Sim is a crate when flight simulation takes place.
 
 pub mod output;
-pub mod runner;
-pub use runner::run;
+pub mod rk4;
+pub mod simulator;

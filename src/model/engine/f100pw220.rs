@@ -1,4 +1,4 @@
-use crate::engine::{Engine, engineparams::EngineParams};
+use crate::model::engine::{Engine, engineparams::EngineParams};
 
 const IDLE_THRUST_LUT: [[f64; 6]; 6] = [
     [4715.1, 2825.6, 3914.4, 5071.0, 6672.3, 8273.7],
