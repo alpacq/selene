@@ -16,4 +16,4 @@ Prefer using the generated docs. [TBD]
 
 ## License
 
-Licensed under the MIT License ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>).
+Licensed under the MIT License (<http://opensource.org/licenses/MIT>).
