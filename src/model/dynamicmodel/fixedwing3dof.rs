@@ -1,5 +1,5 @@
 use crate::{
-    math::{IntegrableState, SizedVector, input::Input, state::State},
+    math::{IntegrableState, SizedVector},
     model::{
         DynamicModel, GRAVITY, RAD_TO_DEG,
         aircraft::Aircraft,
@@ -9,36 +9,38 @@ use crate::{
 };
 use nalgebra::{DVector, dvector};
 
-pub struct FixedWing3DoFState(State);
+pub struct FixedWing3DoFState {
+    state_vector: DVector<f64>,
+}
 
 impl FixedWing3DoFState {
     pub fn new(state_vector: DVector<f64>) -> Self {
-        Self(State::new(state_vector))
+        Self { state_vector }
     }
 
     /// TAS [m/s]
     pub fn vt(&self) -> f64 {
-        self.0.state_vector[0]
+        self.state_vector[0]
     }
 
     /// angle of attack [rad]
     pub fn alpha(&self) -> f64 {
-        self.0.state_vector[1]
+        self.state_vector[1]
     }
 
     /// pitch angle [deg]
     pub fn theta(&self) -> f64 {
-        self.0.state_vector[2]
+        self.state_vector[2]
     }
 
     /// pitch rate [deg/s]
     pub fn q(&self) -> f64 {
-        self.0.state_vector[3]
+        self.state_vector[3]
     }
 
     /// altitude [m]
     pub fn altitude(&self) -> f64 {
-        self.0.state_vector[4]
+        self.state_vector[4]
     }
 }
 
@@ -49,7 +51,7 @@ impl SizedVector for FixedWing3DoFState {
     ///
     /// The size of the state vector.
     fn size(&self) -> usize {
-        self.0.size()
+        self.state_vector.len()
     }
 
     /// Returns the state vector.
@@ -57,8 +59,8 @@ impl SizedVector for FixedWing3DoFState {
     /// # Returns
     ///
     /// The state vector.
-    fn vector(&self) -> DVector<f64> {
-        self.0.vector()
+    fn vector(&self) -> &DVector<f64> {
+        &self.state_vector
     }
 }
 
@@ -68,27 +70,29 @@ impl IntegrableState for FixedWing3DoFState {
     }
 }
 
-pub struct FixedWing3DoFInput(Input);
+pub struct FixedWing3DoFInput {
+    input_vector: DVector<f64>,
+}
 
 impl FixedWing3DoFInput {
     /// throttle position [0..1]
     pub fn throttle(&self) -> f64 {
-        self.0.input_vector[0].clamp(0.0, 1.0)
+        self.input_vector[0].clamp(0.0, 1.0)
     }
 
     /// elevator position [-1..1]
     pub fn elevator(&self) -> f64 {
-        self.0.input_vector[1].clamp(-1.0, 1.0)
+        self.input_vector[1].clamp(-1.0, 1.0)
     }
 
     /// x-axis position of the center of gravity [m]
     pub fn x_cg(&self) -> f64 {
-        self.0.input_vector[2]
+        self.input_vector[2]
     }
 
     /// landing gear position [0..1]
     pub fn landing_gear_position(&self) -> f64 {
-        self.0.input_vector[3]
+        self.input_vector[3]
     }
 }
 
@@ -99,7 +103,7 @@ impl SizedVector for FixedWing3DoFInput {
     ///
     /// The size of the input vector.
     fn size(&self) -> usize {
-        self.0.size()
+        self.input_vector.len()
     }
 
     /// Returns the input vector.
@@ -107,8 +111,8 @@ impl SizedVector for FixedWing3DoFInput {
     /// # Returns
     ///
     /// The input vector.
-    fn vector(&self) -> DVector<f64> {
-        self.0.vector()
+    fn vector(&self) -> &DVector<f64> {
+        &self.input_vector
     }
 }
 

@@ -1,33 +1,35 @@
 use crate::{
-    math::{IntegrableState, SizedVector, input::Input, state::State},
+    math::{IntegrableState, SizedVector},
     model::{DynamicModel, VanDerPol},
 };
 use nalgebra::{DVector, dvector};
 
-#[derive(Clone)]
-pub struct State2State(State);
+#[derive(Debug, Clone)]
+pub struct State2State {
+    state_vector: DVector<f64>,
+}
 
 impl State2State {
     pub fn new(state_vector: DVector<f64>) -> Self {
-        Self(State::new(state_vector))
+        Self { state_vector }
     }
 
     pub fn x1(&self) -> f64 {
-        self.0.state_vector[0]
+        self.state_vector[0]
     }
 
     pub fn x2(&self) -> f64 {
-        self.0.state_vector[1]
+        self.state_vector[1]
     }
 }
 
 impl SizedVector for State2State {
     fn size(&self) -> usize {
-        self.0.size()
+        self.state_vector.len()
     }
 
-    fn vector(&self) -> DVector<f64> {
-        self.0.vector()
+    fn vector(&self) -> &DVector<f64> {
+        &self.state_vector
     }
 }
 
@@ -37,25 +39,27 @@ impl IntegrableState for State2State {
     }
 }
 
-pub struct State2Input(Input);
+pub struct State2Input {
+    input_vector: DVector<f64>,
+}
 
 impl State2Input {
     pub fn new(input_vector: DVector<f64>) -> Self {
-        Self(Input::new(input_vector))
+        Self { input_vector }
     }
 
     pub fn u(&self) -> f64 {
-        self.0.input_vector[0]
+        self.input_vector[0]
     }
 }
 
 impl SizedVector for State2Input {
     fn size(&self) -> usize {
-        self.0.size()
+        self.input_vector.len()
     }
 
-    fn vector(&self) -> DVector<f64> {
-        self.0.vector()
+    fn vector(&self) -> &DVector<f64> {
+        &self.input_vector
     }
 }
 

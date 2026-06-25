@@ -42,19 +42,21 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::math::{input::Input, state::State, timestep::TimeStep};
+    use crate::math::{SizedVector, timestep::TimeStep};
     use crate::model::VanDerPol;
+    use crate::model::dynamicmodel::state2::{State2Input, State2State};
 
     use super::*;
     use nalgebra::dvector;
 
     #[test]
     fn it_works() {
-        let state = State::new(dvector![0.0]);
-        let input = Input::new(dvector![0.0]);
+        let state = State2State::new(dvector![0.0]);
+        let input = State2Input::new(dvector![0.0]);
         let vanderpol = VanDerPol {};
-        let state_equation =
-            |_system: &VanDerPol, x: &State, _u: &Input| State::new(dvector![x.state_vector[0]]);
+        let state_equation = |_system: &VanDerPol, x: &State2State, _u: &State2Input| {
+            State2State::new(dvector![x.vector()[0]])
+        };
         let result = rk4(
             state_equation,
             &vanderpol,
@@ -62,6 +64,6 @@ mod tests {
             &input,
             &TimeStep::new(0.001),
         );
-        assert_eq!(result, State::new(dvector![0.0]));
+        assert_eq!(result.vector()[0], 0.0);
     }
 }

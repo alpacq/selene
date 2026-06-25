@@ -1,13 +1,11 @@
 use nalgebra::DVector;
 
-pub mod input;
-pub mod state;
 pub mod timestep;
 
 pub trait SizedVector {
     fn size(&self) -> usize;
 
-    fn vector(&self) -> DVector<f64>;
+    fn vector(&self) -> &DVector<f64>;
 }
 
 pub trait IntegrableState: SizedVector {
