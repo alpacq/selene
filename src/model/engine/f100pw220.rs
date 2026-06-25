@@ -27,11 +27,15 @@ const MAX_THRUST_LUT: [[f64; 6]; 6] = [
     [128458.9, 103736.7, 81402.7, 59972.4, 38435.1, 22492.7],
 ];
 
+/// A struct representing an F-100-PW-220 aircraft engine
+/// Military turbojet engine used in F-16A/B aircraft
+/// Based on Stevens & Lewis book's data & model
 pub struct F100PW220 {
     pub params: EngineParams,
 }
 
 impl F100PW220 {
+    /// Creates a new F-100-PW-220 engine with default parameters
     pub fn new() -> Self {
         Self {
             params: EngineParams {

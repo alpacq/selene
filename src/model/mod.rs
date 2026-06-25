@@ -1,3 +1,5 @@
+//! Modeling of dynamics systems, particularly aerial vehicles
+
 mod aerodynamics;
 pub mod aircraft;
 pub mod airframeparams;

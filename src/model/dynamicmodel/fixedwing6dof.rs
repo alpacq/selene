@@ -9,11 +9,14 @@ use crate::{
 };
 use nalgebra::{DVector, dvector};
 
+/// A struct representing the state of a fixed-wing aircraft in 3D space
+/// for 6-DoF full dynamic model
 pub struct FixedWing6DoFState {
     state_vector: DVector<f64>,
 }
 
 impl FixedWing6DoFState {
+    /// Creates a new FixedWing6DoFState with the given state vector
     pub fn new(state_vector: DVector<f64>) -> Self {
         Self { state_vector }
     }
@@ -105,11 +108,14 @@ impl SizedVector for FixedWing6DoFState {
 }
 
 impl IntegrableState for FixedWing6DoFState {
+    /// Creates a new FixedWing6DoFState from the given vector
     fn from_vector(vector: DVector<f64>) -> Self {
         FixedWing6DoFState::new(vector)
     }
 }
 
+/// A struct representing the input to a fixed-wing aircraft in 3D space
+/// for 6-DoF full dynamic model
 pub struct FixedWing6DoFInput {
     input_vector: DVector<f64>,
 }
@@ -156,6 +162,7 @@ impl SizedVector for FixedWing6DoFInput {
     }
 }
 
+/// A struct representing a 6-DoF fixed-wing aircraft dynamic model
 pub struct FixedWing6DoF;
 
 impl<E: Engine> DynamicModel<Aircraft<E>> for FixedWing6DoF {

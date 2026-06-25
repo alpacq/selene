@@ -4,14 +4,30 @@ use crate::model::DynamicModel;
 use crate::sim::output::SimOutput;
 use crate::sim::rk4::rk4;
 
+/// The simulator for a dynamic model.
+///
+/// # Example
+///
+/// ```
+/// use selene::sim::Simulator;
+/// use selene::model::dynamicmodel::State2;
+/// use selene::model::VanDerPol;
+///
+/// let mut simulator = Simulator::new(VanDerPol::default(), State2);
+/// ```
 pub struct Simulator<S, DM>
 where
     DM: DynamicModel<S>,
 {
+    /// The system being simulated.
     pub system: S,
+    /// The model being simulated.
     pub model: DM,
+    /// The current time of the simulation.
     pub time: f64,
+    /// The current state of the simulation.
     pub state: DM::State,
+    /// The output of the simulation.
     pub output: SimOutput,
 }
 

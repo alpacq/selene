@@ -9,11 +9,14 @@ use crate::{
 };
 use nalgebra::{DVector, dvector};
 
+/// A struct representing the state of a fixed-wing aircraft in 3D space
+/// for simple longitudinal dynamics
 pub struct FixedWing3DoFState {
     state_vector: DVector<f64>,
 }
 
 impl FixedWing3DoFState {
+    /// Creates a new FixedWing3DoFState with the given state vector
     pub fn new(state_vector: DVector<f64>) -> Self {
         Self { state_vector }
     }
@@ -65,11 +68,14 @@ impl SizedVector for FixedWing3DoFState {
 }
 
 impl IntegrableState for FixedWing3DoFState {
+    /// Creates a new FixedWing3DoFState from the given vector
     fn from_vector(vector: DVector<f64>) -> Self {
         FixedWing3DoFState::new(vector)
     }
 }
 
+/// A struct representing the input to a fixed-wing aircraft in 3D space
+/// for simple longitudinal dynamics
 pub struct FixedWing3DoFInput {
     input_vector: DVector<f64>,
 }
