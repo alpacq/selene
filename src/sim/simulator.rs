@@ -6,23 +6,15 @@ use crate::sim::rk4::rk4;
 
 /// The simulator for a dynamic model.
 ///
-/// # Example
-///
-/// ```
-/// use selene::sim::Simulator;
-/// use selene::model::dynamicmodel::State2;
-/// use selene::model::VanDerPol;
-///
-/// let mut simulator = Simulator::new(VanDerPol::default(), State2);
-/// ```
+/// Use SimulatorBuilder to create a simulator.
 pub struct Simulator<S, DM>
 where
     DM: DynamicModel<S>,
 {
     /// The system being simulated.
-    pub system: S,
+    system: S,
     /// The model being simulated.
-    pub model: DM,
+    model: DM,
     /// The current time of the simulation.
     pub time: f64,
     /// The current state of the simulation.
@@ -35,6 +27,25 @@ impl<S, DM> Simulator<S, DM>
 where
     DM: DynamicModel<S>,
 {
+    /// Returns a builder for creating a simulator from specific
+    /// system and dynamic model.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use selene::sim::Simulator;
+    /// use selene::model::dynamicmodel::State2;
+    /// use selene::model::VanDerPol;
+    ///
+    /// let mut simulator = Simulator::builder()
+    ///     .for_system(VanDerPol {})
+    ///     .with_model(State2 {})
+    ///     .with_state(State2State::new(dvector![0.1, 0.1]))
+    ///     .build();
+    /// ```
+    pub fn builder() -> SimulatorBuilder {
+        SimulatorBuilder::new()
+    }
     /// Steps the simulation forward by one time step using the RK4 method.
     ///
     /// # Arguments
@@ -95,6 +106,87 @@ where
     }
 }
 
+/// First step in building the simulator process
+/// Empty builder
+pub struct SimulatorBuilder;
+
+/// Second step in building the simulator process
+/// Requires a system to be specified
+pub struct SimulatorBuilderWithSystem<S> {
+    system: S,
+}
+
+/// Third step in building the simulator process
+/// Requires a dynamic model to be specified
+pub struct SimulatorBuilderWithModel<S, DM: DynamicModel<S>> {
+    system: S,
+    model: DM,
+}
+
+/// Fourth step in building the simulator process
+/// Requires an initial state to be specified
+pub struct SimulatorBuilderWithInitialState<S, DM: DynamicModel<S>> {
+    system: S,
+    model: DM,
+    time: f64,
+    state: DM::State,
+    output: SimOutput,
+}
+
+impl SimulatorBuilder {
+    /// Returns a new empty builder for creating a simulator.
+    pub fn new() -> Self {
+        SimulatorBuilder
+    }
+
+    /// Specifies the system to use for the simulator.
+    pub fn for_system<S>(self, system: S) -> SimulatorBuilderWithSystem<S> {
+        SimulatorBuilderWithSystem { system }
+    }
+}
+
+impl<S> SimulatorBuilderWithSystem<S> {
+    /// Specifies the model to use for the simulator.
+    pub fn with_model<DM: DynamicModel<S>>(self, model: DM) -> SimulatorBuilderWithModel<S, DM> {
+        SimulatorBuilderWithModel {
+            system: self.system,
+            model,
+        }
+    }
+}
+
+impl<S, DM: DynamicModel<S>> SimulatorBuilderWithModel<S, DM> {
+    /// Specifies the initial state to use for the simulator.
+    pub fn with_state(self, state: DM::State) -> SimulatorBuilderWithInitialState<S, DM> {
+        SimulatorBuilderWithInitialState {
+            system: self.system,
+            model: self.model,
+            time: 0.0,
+            state,
+            output: SimOutput::default(),
+        }
+    }
+}
+
+impl<S, DM: DynamicModel<S>> SimulatorBuilderWithInitialState<S, DM> {
+    /// Specifies the time to use for the simulator.
+    pub fn time(mut self, time: f64) -> Self {
+        self.time = time;
+        self
+    }
+
+    /// Returns the simulator with given parameters
+    pub fn build(self) -> Simulator<S, DM> {
+        Simulator {
+            system: self.system,
+            model: self.model,
+            time: self.time,
+            state: self.state,
+            output: self.output,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -105,13 +197,11 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let mut simulator = Simulator::<VanDerPol, State2> {
-            system: VanDerPol {},
-            model: State2 {},
-            time: 0.0,
-            state: State2State::new(dvector![0.1, 0.1]),
-            output: SimOutput::default(),
-        };
+        let mut simulator = SimulatorBuilder::new()
+            .for_system(VanDerPol {})
+            .with_model(State2 {})
+            .with_state(State2State::new(dvector![0.1, 0.1]))
+            .build();
         let number_of_steps = (1.0 / 0.001) as usize;
         let input = State2Input::new(dvector![0.8]);
         let initial_state = simulator.state.clone();

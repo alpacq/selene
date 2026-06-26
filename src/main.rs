@@ -12,17 +12,15 @@ use crate::{
         dynamicmodel::state2::{State2, State2Input, State2State},
     },
     plots::phase_portrait,
-    sim::{output::SimOutput, simulator::Simulator},
+    sim::simulator::SimulatorBuilder,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let mut simulator = Simulator::<VanDerPol, State2> {
-        system: VanDerPol {},
-        model: State2 {},
-        time: 0.0,
-        state: State2State::new(dvector![0.1, 0.1]),
-        output: SimOutput::default(),
-    };
+    let mut simulator = SimulatorBuilder::new()
+        .for_system(VanDerPol {})
+        .with_model(State2 {})
+        .with_state(State2State::new(dvector![0.1, 0.1]))
+        .build();
     let initial_state = simulator.state.clone();
     simulator.run(
         initial_state,
