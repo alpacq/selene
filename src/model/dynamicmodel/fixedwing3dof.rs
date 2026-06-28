@@ -175,13 +175,13 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing3DOF 
         };
 
         let thrust = system.engine.thrust(u.throttle(), x.altitude(), mach);
-        let cl = cl0 + system.airframe.cla * alpha_deg;
+        let cl = cl0 + system.aerodynamics.cz(x.alpha(), 0.0, u.elevator()) * alpha_deg;
         let cm = dcmg
             + cm0
-            + system.airframe.cma * alpha_deg
-            + system.airframe.cmde * u.elevator()
+            + system.aerodynamics.cm(x.alpha(), 0.0) * alpha_deg
+            + system.aerodynamics.cm(0.0, u.elevator()) * u.elevator()
             + cl * (u.x_cg() - 0.25);
-        let cd = dcdg + cd0 + system.airframe.cdcls * cl * cl;
+        let cd = dcdg + cd0 + system.aerodynamics.cx(x.alpha(), u.elevator()) * cl * cl;
 
         let x0_derivative =
             (thrust * x.alpha().cos() - qs * cd) / system.airframe.mass - GRAVITY * sin_gamma; // vt'

@@ -18,14 +18,6 @@ pub struct AirframeParams {
     pub ixz: f64,
     /// Thrust line offset from CG, m
     pub ze: f64,
-    /// Induced drag coefficient
-    pub cdcls: f64,
-    /// dCL/dalpha, 1/deg
-    pub cla: f64,
-    /// dCM/dalpha, 1/deg
-    pub cma: f64,
-    /// dCM/delevator, 1/deg
-    pub cmde: f64,
     /// dCM/dalpha_dot, 1/rad
     pub cmadot: f64, // to aerodynamics
     /// dCL/dalpha_dot, 1/rad

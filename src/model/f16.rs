@@ -21,13 +21,9 @@ impl F16 {
                 iyy: 75674.3,
                 izz: 85552.4,
                 ixz: 1331.4,
-                ze: 0.6096,
-                cdcls: 0.042,
-                cla: 0.085,
-                cma: -0.022,
-                cmde: -0.016,
-                cmadot: -6.0,
-                cladot: 0.0,
+                ze: 0.6096,  // unused
+                cmadot: 0.0, // unused
+                cladot: 0.0, // unused
             },
             aerodynamics: F16Aero {},
             engine: F100PW220::new(),

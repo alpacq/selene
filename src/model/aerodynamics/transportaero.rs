@@ -28,7 +28,7 @@ impl Aerodynamics for TransportAero {
     }
 
     fn cmq(&self, _alpha: f64) -> f64 {
-        -16.0
+        -16.0 // cmq
     }
 
     fn cnr(&self, _alpha: f64) -> f64 {
@@ -40,7 +40,7 @@ impl Aerodynamics for TransportAero {
     }
 
     fn cx(&self, _alpha: f64, _elevator: f64) -> f64 {
-        0.0
+        0.042 // cdcls
     }
 
     fn cy(&self, _beta: f64, _aileron: f64, _rudder: f64) -> f64 {
@@ -48,11 +48,17 @@ impl Aerodynamics for TransportAero {
     }
 
     fn cz(&self, _alpha: f64, _beta: f64, _elevator: f64) -> f64 {
-        0.0
+        0.085 //cla
     }
 
-    fn cm(&self, _alpha: f64, _elevator: f64) -> f64 {
-        0.0
+    fn cm(&self, alpha: f64, elevator: f64) -> f64 {
+        if alpha != 0.0 {
+            -0.022 // cma
+        } else if elevator != 0.0 {
+            -0.016 //cmde
+        } else {
+            0.0
+        }
     }
 
     fn cl(&self, _alpha: f64, _beta: f64) -> f64 {

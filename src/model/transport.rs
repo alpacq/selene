@@ -21,10 +21,6 @@ impl Transport {
                 izz: 0.0, //unused
                 ixz: 0.0, //unused
                 ze: 0.6096,
-                cdcls: 0.042,
-                cla: 0.085,
-                cma: -0.022,
-                cmde: -0.016,
                 cmadot: -6.0,
                 cladot: 0.0,
             },
