@@ -2,6 +2,7 @@ use crate::{
     math::{IntegrableState, SizedVector},
     model::{
         DynamicModel,
+        aerodynamics::Aerodynamics,
         aircraft::Aircraft,
         atmosphere::{dynamic_pressure, mach},
         engine::Engine,
@@ -140,6 +141,11 @@ impl FixedWing6DoFInput {
     pub fn rudder(&self) -> f64 {
         self.input_vector[3]
     }
+
+    /// center of gravity on x-axis
+    pub fn x_cg(&self) -> f64 {
+        self.input_vector[4]
+    }
 }
 
 impl SizedVector for FixedWing6DoFInput {
@@ -165,13 +171,13 @@ impl SizedVector for FixedWing6DoFInput {
 /// A struct representing a 6-DoF fixed-wing aircraft dynamic model
 pub struct FixedWing6DoF;
 
-impl<E: Engine> DynamicModel<Aircraft<E>> for FixedWing6DoF {
+impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing6DoF {
     type State = FixedWing6DoFState;
     type Input = FixedWing6DoFInput;
 
     fn state_equations(
         &self,
-        system: &Aircraft<E>,
+        system: &Aircraft<A, E>,
         x: &Self::State,
         _u: &Self::Input,
     ) -> Self::State {

@@ -2,6 +2,7 @@ use crate::{
     math::{IntegrableState, SizedVector},
     model::{
         DynamicModel, GRAVITY, RAD_TO_DEG,
+        aerodynamics::Aerodynamics,
         aircraft::Aircraft,
         atmosphere::{dynamic_pressure, mach},
         engine::Engine,
@@ -127,13 +128,13 @@ impl SizedVector for FixedWing3DoFInput {
 /// translation and pitching motion in the vertical plane
 pub struct FixedWing3DOF;
 
-impl<E: Engine> DynamicModel<Aircraft<E>> for FixedWing3DOF {
+impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing3DOF {
     type State = FixedWing3DoFState;
     type Input = FixedWing3DoFInput;
 
     fn state_equations(
         &self,
-        system: &Aircraft<E>,
+        system: &Aircraft<A, E>,
         x: &Self::State,
         u: &Self::Input,
     ) -> Self::State {
@@ -191,7 +192,7 @@ impl<E: Engine> DynamicModel<Aircraft<E>> for FixedWing3DOF {
 
         let pitch_damping = 0.5
             * system.airframe.cbar
-            * (system.airframe.cmq * x.q() + system.airframe.cmadot * x1_derivative)
+            * (system.aerodynamics.cmq(x.alpha()) * x.q() + system.airframe.cmadot * x1_derivative)
             / x.vt(); // pitch damping
 
         let x3_derivative = (qs * system.airframe.cbar * (cm + pitch_damping)

@@ -1,10 +1,11 @@
 use crate::model::{
-    aircraft::Aircraft, airframeparams::AirframeParams, engine::staticthrust::StaticThrust,
+    aerodynamics::transportaero::TransportAero, aircraft::Aircraft, airframeparams::AirframeParams,
+    engine::staticthrust::StaticThrust,
 };
 
 /// Simple model of a medium size transport fixed-wing aircraft
 /// powered by two turboprop engines
-pub type Transport = Aircraft<StaticThrust>;
+pub type Transport = Aircraft<TransportAero, StaticThrust>;
 
 impl Transport {
     /// Creates a new `Transport` model with default parameters
@@ -24,10 +25,10 @@ impl Transport {
                 cla: 0.085,
                 cma: -0.022,
                 cmde: -0.016,
-                cmq: -16.0,
                 cmadot: -6.0,
                 cladot: 0.0,
             },
+            aerodynamics: TransportAero {},
             engine: StaticThrust::new(),
         }
     }

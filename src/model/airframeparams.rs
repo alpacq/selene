@@ -26,10 +26,8 @@ pub struct AirframeParams {
     pub cma: f64,
     /// dCM/delevator, 1/deg
     pub cmde: f64,
-    /// dCM/dq, 1/rad
-    pub cmq: f64,
     /// dCM/dalpha_dot, 1/rad
-    pub cmadot: f64,
+    pub cmadot: f64, // to aerodynamics
     /// dCL/dalpha_dot, 1/rad
     pub cladot: f64,
 }

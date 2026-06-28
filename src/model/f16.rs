@@ -1,11 +1,12 @@
 use crate::model::{
-    aircraft::Aircraft, airframeparams::AirframeParams, engine::f100pw220::F100PW220,
+    aerodynamics::f16aero::F16Aero, aircraft::Aircraft, airframeparams::AirframeParams,
+    engine::f100pw220::F100PW220,
 };
 
 /// A struct representing an F-16 aircraft
 /// based on the Stevens & Lewis book's
 /// F-16 model parameters
-pub type F16 = Aircraft<F100PW220>;
+pub type F16 = Aircraft<F16Aero, F100PW220>;
 
 impl F16 {
     /// Creates a new F-16 aircraft with default parameters
@@ -25,10 +26,10 @@ impl F16 {
                 cla: 0.085,
                 cma: -0.022,
                 cmde: -0.016,
-                cmq: -16.0,
                 cmadot: -6.0,
                 cladot: 0.0,
             },
+            aerodynamics: F16Aero {},
             engine: F100PW220::new(),
         }
     }
