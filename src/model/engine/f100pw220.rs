@@ -146,6 +146,11 @@ impl Engine for F100PW220 {
             1.9 - 0.036 * delta_power
         }
     }
+
+    /// Engine angular momentum
+    fn hx(&self) -> f64 {
+        self.params.hx
+    }
 }
 
 #[cfg(test)]

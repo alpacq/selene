@@ -16,6 +16,8 @@ pub struct AirframeParams {
     pub izz: f64,
     /// Roll-yaw moment of inertia, kg·m²
     pub ixz: f64,
+    /// Reference center of gravity location
+    pub xcg: f64,
     /// Thrust line offset from CG, m
     pub ze: f64,
     /// dCM/dalpha_dot, 1/rad

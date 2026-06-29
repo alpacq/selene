@@ -1,7 +1,7 @@
 use crate::{
     math::{IntegrableState, SizedVector},
     model::{
-        DynamicModel,
+        DynamicModel, GRAVITY, RAD_TO_DEG,
         aerodynamics::Aerodynamics,
         aircraft::Aircraft,
         atmosphere::{dynamic_pressure, mach},
@@ -179,9 +179,9 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing6DoF 
         &self,
         system: &Aircraft<A, E>,
         x: &Self::State,
-        _u: &Self::Input,
+        u: &Self::Input,
     ) -> Self::State {
-        // temporary helper variables
+        // rigid body helper variables
         let xpq =
             system.airframe.ixz * (system.airframe.ixx - system.airframe.iyy + system.airframe.izz);
         let det =
@@ -192,13 +192,229 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing6DoF 
             + (system.airframe.ixz * system.airframe.ixz);
         let ypr = system.airframe.izz - system.airframe.ixx;
 
+        let alpha_deg = x.alpha() * RAD_TO_DEG;
+        let beta_deg = x.beta() * RAD_TO_DEG;
+
+        // values from atmosphere parameters
+
         let pressure = dynamic_pressure(x.vt(), x.altitude());
         let mach = mach(x.vt(), x.altitude());
 
-        FixedWing6DoFState::new(dvector![0.0])
+        // engine modeling
+
+        let set_power = system.engine.throttle_to_power(u.throttle());
+        let power_dot = system.engine.power_dynamics(x.power(), set_power);
+        let thrust = system.engine.thrust(x.power(), x.altitude(), mach);
+
+        // control and state helper variables
+
+        let aileron_deg = u.aileron() / 20.0;
+        let rudder_deg = u.rudder() / 30.0;
+
+        let tvt = 0.5 / x.vt();
+        let b2v = system.airframe.b * tvt;
+        let cq = system.airframe.cbar * x.q() * tvt;
+
+        // aerodynamic properties with damping derivatives
+
+        let cxt = system.aerodynamics.cx(alpha_deg, u.elevator())
+            + cq * system.aerodynamics.cxq(alpha_deg);
+        let cyt = system.aerodynamics.cy(beta_deg, u.aileron(), u.rudder())
+            + b2v
+                * (system.aerodynamics.cyr(alpha_deg) * x.r()
+                    + system.aerodynamics.cyp(alpha_deg) * x.p());
+        let czt = system.aerodynamics.cz(alpha_deg, beta_deg, u.elevator())
+            + cq * system.aerodynamics.czq(alpha_deg);
+        let clt = system.aerodynamics.cl(alpha_deg, beta_deg)
+            + system.aerodynamics.dlda(alpha_deg, beta_deg) * aileron_deg
+            + system.aerodynamics.dldr(alpha_deg, beta_deg) * rudder_deg
+            + b2v
+                * (system.aerodynamics.clr(alpha_deg) * x.r()
+                    + system.aerodynamics.clp(alpha_deg) * x.p());
+        let cmt = system.aerodynamics.cm(alpha_deg, u.elevator())
+            + cq * system.aerodynamics.cmq(alpha_deg)
+            + czt * (system.airframe.xcg - u.x_cg());
+        let cnt = system.aerodynamics.cn(alpha_deg, beta_deg)
+            + system.aerodynamics.dnda(alpha_deg, beta_deg) * aileron_deg
+            + system.aerodynamics.dndr(alpha_deg, beta_deg) * rudder_deg
+            + b2v
+                * (system.aerodynamics.cnr(alpha_deg) * x.r()
+                    + system.aerodynamics.cnp(alpha_deg) * x.p())
+            - cyt * (system.airframe.xcg - u.x_cg()) * system.airframe.cbar / system.airframe.b;
+
+        // helper variables for state equations
+
+        let uu = x.vt() * x.alpha().cos() * x.beta().cos();
+        let vv = x.vt() * x.beta().sin();
+        let ww = x.vt() * x.alpha().sin() * x.beta().cos();
+        let qs = pressure * system.airframe.s;
+        let qsb = qs * system.airframe.b;
+        let rmqs = qs / system.airframe.mass;
+
+        let ay = rmqs * cyt;
+        let az = rmqs * czt;
+
+        // force equations
+
+        let u_dot = x.r() * vv - x.q() * ww - GRAVITY * x.theta().sin()
+            + (qs * cxt + thrust) / system.airframe.mass;
+        let v_dot = x.p() * ww - x.r() * uu + GRAVITY * x.theta().cos() * x.phi().sin() + ay;
+        let w_dot = x.q() * uu - x.p() * vv + GRAVITY * x.theta().cos() * x.phi().cos() + az;
+        let dum = uu * uu + ww * ww;
+
+        let vt_dot = (uu * u_dot + vv * v_dot + ww * w_dot) / x.vt();
+        let alpha_dot = (uu * w_dot - ww * u_dot) / dum;
+        let beta_dot = (x.vt() * v_dot - vv * vt_dot) * (x.beta().cos() / dum);
+
+        // kinematic equations
+
+        let phi_dot = x.p()
+            + (x.theta().sin() / x.theta().cos()) * (x.q() * x.phi().sin() + x.r() * x.phi().cos());
+        let theta_dot = x.q() * x.phi().cos() - x.r() * x.phi().sin();
+        let psi_dot = (x.q() * x.phi().sin() + x.r() * x.phi().cos()) / x.theta().cos();
+
+        // moments equations
+
+        let roll = qsb * clt;
+        let pitch = qs * system.airframe.cbar * cmt;
+        let yaw = qsb * cnt;
+
+        let p_dot = (xpq * x.p() * x.q() - xqr * x.q() * x.r()
+            + system.airframe.izz * roll
+            + system.airframe.ixz * (yaw + x.q() * system.engine.hx()))
+            / det;
+        let q_dot = (ypr * x.p() * x.r() - system.airframe.ixz * (x.p() * x.p() - x.r() * x.r())
+            + pitch
+            - x.r() * system.engine.hx())
+            / system.airframe.iyy;
+        let r_dot = (zpq * x.p() * x.q() - xpq * x.q() * x.r()
+            + system.airframe.ixz * roll
+            + system.airframe.ixx * (yaw + x.q() * system.engine.hx()))
+            / det;
+
+        // navigation equations
+
+        let s1 = x.theta().cos() * x.psi().cos();
+        let s2 = x.theta().cos() * x.psi().sin();
+        let s3 = x.phi().sin() * x.psi().cos() * x.theta().sin() - x.phi().cos() * x.psi().sin();
+        let s4 = x.phi().sin() * x.psi().sin() * x.theta().sin() + x.phi().cos() * x.psi().cos();
+        let s5 = x.phi().sin() * x.theta().cos();
+        let s6 = x.phi().cos() * x.theta().sin() * x.psi().cos() + x.phi().sin() * x.psi().sin();
+        let s7 = x.phi().cos() * x.theta().sin() * x.psi().sin() - x.phi().sin() * x.psi().cos();
+        let s8 = x.phi().cos() * x.theta().cos();
+
+        let posn_dot = uu * s1 + vv * s3 + ww * s6;
+        let pose_dot = uu * s2 + vv * s4 + ww * s7;
+        let altitude_dot = uu * x.theta().sin() - vv * s5 - ww * s8;
+
+        // TODO: telemetry output
+
+        let _an = -az / GRAVITY;
+        let _alat = ay / GRAVITY;
+
+        FixedWing6DoFState::new(dvector![
+            vt_dot,
+            alpha_dot,
+            beta_dot,
+            phi_dot,
+            theta_dot,
+            psi_dot,
+            p_dot,
+            q_dot,
+            r_dot,
+            posn_dot,
+            pose_dot,
+            altitude_dot,
+            power_dot
+        ])
     }
 
     fn system_rank(&self) -> usize {
         13
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::model::F16;
+
+    use super::*;
+    use nalgebra::dvector;
+
+    fn prepare_model() -> FixedWing6DoFState {
+        let x = FixedWing6DoFState::new(dvector![
+            152.4, 0.5, -0.2, -1.0, 1.0, -1.0, 0.7, -0.8, 0.9, 304.8, 274.32, 3048.0, 90.0
+        ]);
+        let u = FixedWing6DoFInput {
+            input_vector: dvector![0.9, 20.0, -15.0, -20.0, 0.4],
+        };
+
+        let system = FixedWing6DoF {};
+
+        system.state_equations(&F16::new(), &x, &u)
+    }
+
+    const EPSILON: f64 = 1e-3;
+
+    fn assert_approx(actual: f64, expected: f64, name: &str) {
+        assert!(
+            (actual - expected).abs() < EPSILON,
+            "{name}: expected {expected}, got {actual}"
+        );
+    }
+
+    #[test]
+    fn textbook_model_test_vt() {
+        assert_approx(prepare_model().vt(), -25.74150, "vt_dot");
+    }
+
+    #[test]
+    fn textbook_model_test_alpha() {
+        assert_approx(prepare_model().alpha(), -0.8708620, "alpha_dot");
+    }
+
+    #[test]
+    fn textbook_model_test_beta() {
+        assert_approx(prepare_model().beta(), -0.4797399, "beta_dot");
+    }
+
+    #[test]
+    fn textbook_model_test_phi() {
+        assert_approx(prepare_model().phi(), 2.505734, "phi_dot");
+    }
+
+    #[test]
+    fn textbook_model_test_theta() {
+        assert_approx(prepare_model().theta(), 0.3250820, "theta_dot");
+    }
+
+    #[test]
+    fn textbook_model_test_psi() {
+        assert_approx(prepare_model().psi(), 2.145926, "psi_dot");
+    }
+
+    #[test]
+    fn textbook_model_test_p() {
+        assert_approx(prepare_model().p(), 12.62395, "p_dot");
+    }
+
+    #[test]
+    fn textbook_model_test_q() {
+        assert_approx(prepare_model().q(), 0.9648011, "q_dot");
+    }
+
+    #[test]
+    fn textbook_model_test_r() {
+        assert_approx(prepare_model().r(), 0.5809014, "r_dot");
+    }
+
+    #[test]
+    fn textbook_model_test_altitude() {
+        assert_approx(prepare_model().altitude(), 75.629, "altitude_dot");
+    }
+
+    #[test]
+    fn textbook_model_test_power() {
+        assert_approx(prepare_model().power(), -58.68999, "power_dot");
     }
 }

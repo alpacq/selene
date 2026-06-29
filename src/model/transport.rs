@@ -20,6 +20,7 @@ impl Transport {
                 iyy: 5.559e6,
                 izz: 0.0, //unused
                 ixz: 0.0, //unused
+                xcg: 0.0, //unused
                 ze: 0.6096,
                 cmadot: -6.0,
                 cladot: 0.0,

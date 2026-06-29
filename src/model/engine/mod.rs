@@ -48,4 +48,10 @@ pub trait Engine {
     /// # Returns
     /// The reversed time constant of the engine.
     fn tau_inverse(&self, delta_power: f64) -> f64;
+
+    /// Engine angular momentum.
+    ///
+    /// # Returns
+    /// Engine angular momentum.
+    fn hx(&self) -> f64;
 }

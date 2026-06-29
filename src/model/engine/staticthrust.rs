@@ -42,4 +42,9 @@ impl Engine for StaticThrust {
     fn tau_inverse(&self, _delta_power: f64) -> f64 {
         1.0
     }
+
+    /// Engine angular momentum
+    fn hx(&self) -> f64 {
+        0.0
+    }
 }
