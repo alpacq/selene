@@ -132,6 +132,7 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing3DOF 
     type State = FixedWing3DoFState;
     type Input = FixedWing3DoFInput;
 
+    /// State equations for the 3-DoF simple longitudinal model
     fn state_equations(
         &self,
         system: &Aircraft<A, E>,
@@ -211,6 +212,8 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing3DOF 
         ])
     }
 
+    /// Returns the rank of the system (number of state variables)
+    /// For this 3-DoF simple longitudinal model, the rank is 5.
     fn system_rank(&self) -> usize {
         5
     }

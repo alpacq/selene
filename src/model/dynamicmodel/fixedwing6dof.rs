@@ -175,6 +175,8 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing6DoF 
     type State = FixedWing6DoFState;
     type Input = FixedWing6DoFInput;
 
+    /// State equations for the 6-DoF fixed-wing aircraft model.
+    /// Full non-linear model
     fn state_equations(
         &self,
         system: &Aircraft<A, E>,
@@ -329,6 +331,8 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing6DoF 
         ])
     }
 
+    /// Returns the rank of the system (number of state variables)
+    /// For this 6-DoF model, the rank is 13.
     fn system_rank(&self) -> usize {
         13
     }

@@ -6,7 +6,7 @@ use crate::{
 };
 
 /// ------------------------------------------------------------
-/// DAMP — dynamic damping derivatives
+/// dynamic damping derivatives
 /// Index: alpha 12 points, -10 to 45 deg
 /// ------------------------------------------------------------
 /// CXq — x-force due to pitch rate
@@ -225,81 +225,100 @@ pub const DNDR: [&[f64]; 12] = [
 pub struct F16Aero;
 
 impl Aerodynamics for F16Aero {
+    /// damping derivative CXq - CX derivative with respect to pitch rate q
     fn cxq(&self, alpha: f64) -> f64 {
         lut_interpolation_1d(alpha, &CXQ_LUT, 2, 0.2)
     }
 
+    /// damping derivative CYr - CY derivative with respect to yaw rate r
     fn cyr(&self, alpha: f64) -> f64 {
         lut_interpolation_1d(alpha, &CYR_LUT, 2, 0.2)
     }
 
+    /// damping derivative CYP - CY derivative with respect to roll rate p
     fn cyp(&self, alpha: f64) -> f64 {
         lut_interpolation_1d(alpha, &CYP_LUT, 2, 0.2)
     }
 
+    /// damping derivative CZq - CZ derivative with respect to pitch rate q
     fn czq(&self, alpha: f64) -> f64 {
         lut_interpolation_1d(alpha, &CZQ_LUT, 2, 0.2)
     }
 
+    /// damping derivative Clr - Cl(roll) derivative with respect to yaw rate r
     fn clr(&self, alpha: f64) -> f64 {
         lut_interpolation_1d(alpha, &CLR_LUT, 2, 0.2)
     }
 
+    /// damping derivative Clp - Cl(roll) derivative with respect to roll rate p
     fn clp(&self, alpha: f64) -> f64 {
         lut_interpolation_1d(alpha, &CLP_LUT, 2, 0.2)
     }
 
+    /// damping derivative Cmq - Cm(pitch) derivative with respect to pitch rate q
     fn cmq(&self, alpha: f64) -> f64 {
         lut_interpolation_1d(alpha, &CMQ_LUT, 2, 0.2)
     }
 
+    /// damping derivative Cnr - Cn(yaw) derivative with respect to yaw rate r
     fn cnr(&self, alpha: f64) -> f64 {
         lut_interpolation_1d(alpha, &CNR_LUT, 2, 0.2)
     }
 
+    /// damping derivative Cnp - Cn(yaw) derivative with respect to roll rate p
     fn cnp(&self, alpha: f64) -> f64 {
         lut_interpolation_1d(alpha, &CNP_LUT, 2, 0.2)
     }
 
+    /// x-axis aerodynamic force coefficient
     fn cx(&self, alpha: f64, elevator: f64) -> f64 {
         lut_interpolation_2d(alpha, elevator, 2, 2, 0.2, 1.0 / 12.0, &CX)
     }
 
+    /// y-axis aerodynamic force (sideforce) coefficient
     fn cy(&self, beta: f64, aileron: f64, rudder: f64) -> f64 {
         beta * -0.02 + (aileron / 20.0) * 0.021 + (rudder / 30.0) * 0.086
     }
 
+    /// z-axis aerodynamic force coefficient
     fn cz(&self, alpha: f64, beta: f64, elevator: f64) -> f64 {
         let s = lut_interpolation_1d(alpha, &CZ, 2, 0.2);
         s * (1.0 - (beta / 57.3).pow(2.0)) - (elevator / 25.0) * 0.19
     }
 
+    /// pitching moment coefficient
     fn cm(&self, alpha: f64, elevator: f64) -> f64 {
         lut_interpolation_2d(alpha, elevator, 2, 2, 0.2, 1.0 / 12.0, &CM)
     }
 
+    /// rolling moment coefficient
     fn cl(&self, alpha: f64, beta: f64) -> f64 {
         let s = lut_interpolation_2d(alpha, beta.abs(), 2, 0, 0.2, 0.2, &CL);
         s * beta.signum()
     }
 
+    /// yawing moment coefficient
     fn cn(&self, alpha: f64, beta: f64) -> f64 {
         let s = lut_interpolation_2d(alpha, beta.abs(), 2, 0, 0.2, 0.2, &CN);
         s * beta.signum()
     }
 
+    /// rolling moment due to ailerons
     fn dlda(&self, alpha: f64, beta: f64) -> f64 {
         lut_interpolation_2d(alpha, beta, 2, 3, 0.2, 0.1, &DLDA)
     }
 
+    /// rolling moment due to rudder
     fn dldr(&self, alpha: f64, beta: f64) -> f64 {
         lut_interpolation_2d(alpha, beta, 2, 3, 0.2, 0.1, &DLDR)
     }
 
+    /// yawing moment due to ailerons
     fn dnda(&self, alpha: f64, beta: f64) -> f64 {
         lut_interpolation_2d(alpha, beta, 2, 3, 0.2, 0.1, &DNDA)
     }
 
+    /// yawing moment due to rudder
     fn dndr(&self, alpha: f64, beta: f64) -> f64 {
         lut_interpolation_2d(alpha, beta, 2, 3, 0.2, 0.1, &DNDR)
     }
