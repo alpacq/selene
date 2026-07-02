@@ -223,6 +223,19 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing3DoF 
 }
 
 impl<A: Aerodynamics, E: Engine> TrimTarget<Aircraft<A, E>> for FixedWing3DoF {
+    /// Sets up the trim problem for the given setpoints and parameters.
+    ///
+    /// # Arguments
+    ///
+    /// * `setpoints` - Must be a `DVector` of length 3 containing the setpoints for the trim problem:
+    ///     * `setpoints[0]` - The desired velocity setpoint [m/s].
+    ///     * `setpoints[1]` - The desired altitude setpoint [m].
+    ///     * `setpoints[2]` - The desired gamma angle setpoint [deg].
+    /// * `params` - The parameters for the trim problem.
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing the initial state and input for the trim problem.
     fn setup(
         &self,
         setpoints: &DVector<f64>,
@@ -256,19 +269,9 @@ impl<A: Aerodynamics, E: Engine> TrimTarget<Aircraft<A, E>> for FixedWing3DoF {
         Ok((x, u))
     }
 
+    /// Cost for 3-DoF fixed-wing model is calculated as
+    /// `vt^2 + 100 * alpha^2 + 10 * q^2`.
     fn cost(&self, x_dot: &FixedWing3DoFState) -> f64 {
         x_dot.vt().pow(2.0) + 100.0 * x_dot.alpha().pow(2.0) + 10.0 * x_dot.q().pow(2.0)
-    }
-
-    fn initial_simplex(&self) -> Vec<DVector<f64>> {
-        // params = [throttle, elevator, alpha]; initial guess.
-        // Nelder-Mead needs n + 1 = 4 vertices, built by perturbing `p0`.
-        let p0 = dvector![0.1, -10.0, 0.1];
-        vec![
-            p0.clone(),
-            &p0 + dvector![0.05, 0.0, 0.0],
-            &p0 + dvector![0.0, 1.0, 0.0],
-            &p0 + dvector![0.0, 0.0, 0.05],
-        ]
     }
 }

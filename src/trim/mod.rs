@@ -20,16 +20,34 @@ pub trait TrimTarget<Sys>: DynamicModel<Sys> {
         params: &DVector<f64>,
     ) -> Result<(Self::State, Self::Input), TrimError>;
 
-    /// Scalarizes the state derivative into the value to minimize.
+    /// Returns the cost function value for the given state derivative.
     fn cost(&self, x_dot: &Self::State) -> f64;
+}
 
-    /// Initial Nelder-Mead simplex (`n + 1` vertices) in parameter space.
-    fn initial_simplex(&self) -> Vec<DVector<f64>>;
+/// Builds the initial Nelder-Mead simplex from a single seed point using the
+/// same heuristic as MATLAB's `fminsearch`: perturb each coordinate by 5%
+/// (or a small fixed step for coordinates that are exactly zero).
+fn build_simplex(x0: &DVector<f64>) -> Vec<DVector<f64>> {
+    const USUAL_DELTA: f64 = 0.05;
+    const ZERO_DELTA: f64 = 0.00025;
+
+    let mut simplex = Vec::with_capacity(x0.len() + 1);
+    simplex.push(x0.clone());
+    for i in 0..x0.len() {
+        let mut vertex = x0.clone();
+        vertex[i] = if vertex[i] != 0.0 {
+            (1.0 + USUAL_DELTA) * vertex[i]
+        } else {
+            ZERO_DELTA
+        };
+        simplex.push(vertex);
+    }
+    simplex
 }
 
 /// A generic trim problem binding a system, a model and its setpoints.
 ///
-/// It minimizes the model's [`TrimTarget::objective`] with Nelder-Mead
+/// It minimizes the model's [`TrimTarget::cost`] with Nelder-Mead
 /// (argmin's equivalent of MATLAB's `fminsearch`).
 pub struct TrimProblem<Sys, M>
 where
@@ -38,23 +56,35 @@ where
     system: Sys,
     model: M,
     setpoints: DVector<f64>,
+    /// Initial guess for the optimizer parameters (the seed `s0`), in the
+    /// same layout as [`TrimTarget::setup`]'s `params`.
+    initial_params: DVector<f64>,
 }
 
 impl<Sys, M> TrimProblem<Sys, M>
 where
     M: TrimTarget<Sys>,
 {
-    pub fn new(system: Sys, model: M, setpoints: DVector<f64>) -> Self {
+    /// Creates a new trim problem for the given system, model, setpoints and
+    /// initial parameter guess.
+    pub fn new(
+        system: Sys,
+        model: M,
+        setpoints: DVector<f64>,
+        initial_params: DVector<f64>,
+    ) -> Self {
         Self {
             system,
             model,
             setpoints,
+            initial_params,
         }
     }
 
     /// Runs the trim and returns the trimmed state, input and final cost.
     pub fn trim(self) -> Result<(M::State, M::Input, f64), Error> {
-        let solver = NelderMead::new(self.model.initial_simplex()).with_sd_tolerance(1e-8)?;
+        let simplex = build_simplex(&self.initial_params);
+        let solver = NelderMead::new(simplex).with_sd_tolerance(1e-8)?;
 
         let res = Executor::new(self, solver)
             .configure(|state| state.max_iters(1000))
@@ -86,6 +116,7 @@ where
     type Param = DVector<f64>;
     type Output = f64;
 
+    /// Evaluates the cost function of the trim problem for the given parameters.
     fn cost(&self, params: &Self::Param) -> Result<Self::Output, Error> {
         let (x, u) = self.model.setup(&self.setpoints, params)?;
         let x_dot = self.model.state_equations(&self.system, &x, &u);
