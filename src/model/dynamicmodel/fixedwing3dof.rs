@@ -90,9 +90,9 @@ impl FixedWing3DoFInput {
         self.input_vector[0].clamp(0.0, 1.0)
     }
 
-    /// elevator position [-1..1]
+    /// elevator deflection [deg], limited to +-35 deg of travel
     pub fn elevator(&self) -> f64 {
-        self.input_vector[1].clamp(-1.0, 1.0)
+        self.input_vector[1].clamp(-35.0, 35.0)
     }
 
     /// x-axis position of the center of gravity [m]
@@ -254,9 +254,10 @@ impl<A: Aerodynamics, E: Engine> TrimTarget<Aircraft<A, E>> for FixedWing3DoF {
 
         let set_vt = setpoints[0];
         let set_altitude = setpoints[1];
-        let set_gamma = setpoints[2];
+        let set_gamma = setpoints[2] / RAD_TO_DEG;
+        // Clean configuration (gear + flaps up)
         let u = FixedWing3DoFInput {
-            input_vector: dvector![params[0], params[1], 0.25, 1.0],
+            input_vector: dvector![params[0], params[1], 0.25, 0.0],
         };
         let x = FixedWing3DoFState::new(dvector![
             set_vt,

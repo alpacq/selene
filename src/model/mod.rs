@@ -28,4 +28,4 @@ const GAS_CONSTANT: f64 = 287.0;
 const GRAVITY: f64 = 9.80665;
 
 /// Radians to degrees conversion factor
-const RAD_TO_DEG: f64 = 57.29578;
+pub const RAD_TO_DEG: f64 = 57.29578;

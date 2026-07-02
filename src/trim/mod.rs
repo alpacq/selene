@@ -123,3 +123,63 @@ where
         Ok(self.model.cost(&x_dot))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::RAD_TO_DEG;
+    use crate::model::Transport;
+    use crate::model::dynamicmodel::fixedwing3dof::FixedWing3DoF;
+    use nalgebra::dvector;
+
+    #[test]
+    fn test_transport_3dof_model_at_0_altitude_and_51_816_velocity()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let problem = TrimProblem::new(
+            Transport::new(),
+            FixedWing3DoF,
+            dvector![51.816, 0.0, 0.0], // setpoints: [vt, altitude, gamma]
+            dvector![0.1, -10.0, 0.1],  // initial params: [throttle, elevator, alpha]
+        );
+        let (x, u, cost) = problem.trim()?;
+        assert!(cost < 1e-6, "trim did not converge: cost = {cost}");
+        assert!((u.throttle() - 0.297).abs() < 5e-3);
+        assert!((u.elevator() + 25.7).abs() < 5e-2);
+        assert!((x.alpha() * RAD_TO_DEG - 22.1).abs() < 5e-2);
+        Ok(())
+    }
+
+    #[test]
+    fn test_transport_3dof_model_at_0_altitude_and_152_4_velocity()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let problem = TrimProblem::new(
+            Transport::new(),
+            FixedWing3DoF,
+            dvector![152.4, 0.0, 0.0], // setpoints: [vt, altitude, gamma]
+            dvector![0.1, -10.0, 0.1], // initial params: [throttle, elevator, alpha]
+        );
+        let (x, u, cost) = problem.trim()?;
+        assert!(cost < 1e-6, "trim did not converge: cost = {cost}");
+        assert!((u.throttle() - 0.293).abs() < 5e-3);
+        assert!((u.elevator() - 2.46).abs() < 5e-2);
+        assert!((x.alpha() * RAD_TO_DEG - 0.58).abs() < 5e-2);
+        Ok(())
+    }
+
+    #[test]
+    fn test_transport_3dof_model_at_9144_altitude_and_152_4_velocity()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let problem = TrimProblem::new(
+            Transport::new(),
+            FixedWing3DoF,
+            dvector![152.4, 9144.0, 0.0], // setpoints: [vt, altitude, gamma]
+            dvector![0.1, -10.0, 0.1],    // initial params: [throttle, elevator, alpha]
+        );
+        let (x, u, cost) = problem.trim()?;
+        assert!(cost < 1e-6, "trim did not converge: cost = {cost}");
+        assert!((u.throttle() - 0.204).abs() < 5e-3);
+        assert!((u.elevator() + 4.1).abs() < 5e-2);
+        assert!((x.alpha() * RAD_TO_DEG - 5.43).abs() < 5e-2);
+        Ok(())
+    }
+}
