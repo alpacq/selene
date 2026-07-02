@@ -8,6 +8,7 @@ use crate::{
         engine::Engine,
     },
 };
+use argmin::core::{CostFunction, Error};
 use nalgebra::{DVector, dvector};
 
 /// A struct representing the state of a fixed-wing aircraft in 3D space
@@ -335,6 +336,15 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing6DoF 
     /// For this 6-DoF model, the rank is 13.
     fn system_rank(&self) -> usize {
         13
+    }
+}
+
+impl CostFunction for FixedWing6DoF {
+    type Param = DVector<f64>;
+    type Output = f64;
+
+    fn cost(&self, _params: &Self::Param) -> Result<Self::Output, Error> {
+        Ok(0.0)
     }
 }
 

@@ -1,7 +1,9 @@
+pub mod error;
 pub mod math;
 pub mod model;
 pub mod plots;
 pub mod sim;
+pub mod trim;
 
 use nalgebra::dvector;
 

@@ -1,4 +1,5 @@
 use crate::{
+    error::TrimError,
     math::{IntegrableState, SizedVector},
     model::{
         DynamicModel, GRAVITY, RAD_TO_DEG,
@@ -7,8 +8,10 @@ use crate::{
         atmosphere::{dynamic_pressure, mach},
         engine::Engine,
     },
+    trim::TrimTarget,
 };
 use nalgebra::{DVector, dvector};
+use num_traits::Pow;
 
 /// A struct representing the state of a fixed-wing aircraft in 3D space
 /// for simple longitudinal dynamics
@@ -126,9 +129,9 @@ impl SizedVector for FixedWing3DoFInput {
 /// Simple longitudinal 3 degrees of freedom model
 /// of a fixed-wing aircraft
 /// translation and pitching motion in the vertical plane
-pub struct FixedWing3DOF;
+pub struct FixedWing3DoF;
 
-impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing3DOF {
+impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing3DoF {
     type State = FixedWing3DoFState;
     type Input = FixedWing3DoFInput;
 
@@ -216,5 +219,56 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing3DOF 
     /// For this 3-DoF simple longitudinal model, the rank is 5.
     fn system_rank(&self) -> usize {
         5
+    }
+}
+
+impl<A: Aerodynamics, E: Engine> TrimTarget<Aircraft<A, E>> for FixedWing3DoF {
+    fn setup(
+        &self,
+        setpoints: &DVector<f64>,
+        params: &DVector<f64>,
+    ) -> Result<(FixedWing3DoFState, FixedWing3DoFInput), TrimError> {
+        if setpoints.len() != 3 {
+            return Err(TrimError::SetpointsError(
+                "setpoints must have length 3".to_string(),
+            ));
+        }
+        if params.len() != 3 {
+            return Err(TrimError::ParamsError(
+                "params must have length 3".to_string(),
+            ));
+        }
+
+        let set_vt = setpoints[0];
+        let set_altitude = setpoints[1];
+        let set_gamma = setpoints[2];
+        let u = FixedWing3DoFInput {
+            input_vector: dvector![params[0], params[1], 0.25, 1.0],
+        };
+        let x = FixedWing3DoFState::new(dvector![
+            set_vt,
+            params[2],
+            params[2] + set_gamma,
+            0.0,
+            set_altitude,
+            0.0
+        ]);
+        Ok((x, u))
+    }
+
+    fn cost(&self, x_dot: &FixedWing3DoFState) -> f64 {
+        x_dot.vt().pow(2.0) + 100.0 * x_dot.alpha().pow(2.0) + 10.0 * x_dot.q().pow(2.0)
+    }
+
+    fn initial_simplex(&self) -> Vec<DVector<f64>> {
+        // params = [throttle, elevator, alpha]; initial guess.
+        // Nelder-Mead needs n + 1 = 4 vertices, built by perturbing `p0`.
+        let p0 = dvector![0.1, -10.0, 0.1];
+        vec![
+            p0.clone(),
+            &p0 + dvector![0.05, 0.0, 0.0],
+            &p0 + dvector![0.0, 1.0, 0.0],
+            &p0 + dvector![0.0, 0.0, 0.05],
+        ]
     }
 }
