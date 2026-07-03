@@ -1,4 +1,5 @@
 use crate::{
+    error::TrimError,
     math::{IntegrableState, SizedVector},
     model::{
         DynamicModel, GRAVITY, RAD_TO_DEG,
@@ -7,8 +8,10 @@ use crate::{
         atmosphere::{dynamic_pressure, mach},
         engine::Engine,
     },
+    trim::TrimTarget,
 };
 use nalgebra::{DVector, dvector};
+use num_traits::Pow;
 
 /// A struct representing the state of a fixed-wing aircraft in 3D space
 /// for 6-DoF full dynamic model
@@ -335,6 +338,104 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing6DoF 
     /// For this 6-DoF model, the rank is 13.
     fn system_rank(&self) -> usize {
         13
+    }
+}
+
+impl<A: Aerodynamics, E: Engine> TrimTarget<Aircraft<A, E>> for FixedWing6DoF {
+    /// Sets up the state and input for the given setpoints and parameters.
+    ///
+    /// # Arguments
+    ///
+    /// * `system` - The aircraft system to trim.
+    /// * `setpoints` - Must be a `DVector` of length 3 containing the setpoints for the trim problem:
+    ///     * `setpoints[0]` - The desired velocity setpoint [m/s].
+    ///     * `setpoints[1]` - The desired altitude setpoint [m].
+    ///     * `setpoints[2]` - The desired gamma angle setpoint [deg].
+    ///     * `setpoints[3]` - The desired pitch rate setpoint [deg/s].
+    ///     * `setpoints[4]` - The desired turn rate setpoint [deg/s].
+    ///     * `setpoints[5]` - The desired phi angle setpoint [deg].
+    ///     * `setpoints[6]` - The desired coordinated turn or skidding turn mode (1.0 for coordinated turn, 2.0 for skidding turn).
+    /// * `params` - The parameters for the trim problem.
+    ///     * `params[0]` - The throttle [0.0 - 1.0].
+    ///     * `params[1]` - The elevator [deg].
+    ///     * `params[2]` - The alpha angle [rad]
+    ///     * `params[3]` - The aileron [deg].
+    ///     * `params[4]` - The rudder [deg].
+    ///     * `params[5]` - The beta angle [rad].
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing the state and input for the trim problem.
+    fn setup(
+        &self,
+        system: &Aircraft<A, E>,
+        setpoints: &DVector<f64>,
+        params: &DVector<f64>,
+    ) -> Result<(FixedWing6DoFState, FixedWing6DoFInput), TrimError> {
+        if setpoints.len() != 9 {
+            return Err(TrimError::SetpointsError(
+                "setpoints must have length 7".to_string(),
+            ));
+        }
+        if params.len() != 6 {
+            return Err(TrimError::ParamsError(
+                "params must have length 6".to_string(),
+            ));
+        }
+
+        // setpoints for steady state flight
+        let set_vt = setpoints[0];
+        let set_altitude = setpoints[1];
+        let set_gamma = setpoints[2] / RAD_TO_DEG;
+        let set_roll_rate = setpoints[3];
+        let set_pitch_rate = setpoints[4];
+        let set_turn_rate = setpoints[5];
+        let phi = setpoints[6];
+
+        // control inputs vector [throttle, elevator, aileron, rudder]
+        let u = FixedWing6DoFInput {
+            input_vector: dvector![params[0], params[1], params[3], params[4]],
+        };
+
+        // coordinated turn or skidding turn logic
+        if setpoints[7] == 1.0 {
+            // TODO coordinated turn logic
+        } else if set_turn_rate != 0.0 {
+            // TODO skidding turn logic
+        }
+
+        let d = if phi != 0.0 { params[2] } else { -params[2] };
+        let theta = if set_gamma.sin() != 0.0 {
+            let sgcb = set_gamma.sin() / params[5].cos();
+            d + (sgcb / (1.0 - sgcb * sgcb).sqrt()).atan()
+        } else {
+            d
+        };
+
+        let x = FixedWing6DoFState::new(dvector![
+            set_vt,
+            params[2],
+            params[5],
+            phi,
+            theta,
+            0.0,
+            set_roll_rate,
+            set_pitch_rate,
+            0.0,
+            0.0,
+            0.0,
+            set_altitude,
+            system.engine.throttle_to_power(params[0])
+        ]);
+        Ok((x, u))
+    }
+
+    /// Cost for 6-DoF fixed-wing model is calculated as
+    /// `vt^2 + 100 * (alpha^2 + beta^2) + 10 * (P^2 + Q^2 + R^2)`.
+    fn cost(&self, x_dot: &FixedWing6DoFState) -> f64 {
+        x_dot.vt().pow(2.0)
+            + 100.0 * (x_dot.alpha().pow(2.0) + x_dot.beta().pow(2.0))
+            + 10.0 * (x_dot.p().pow(2.0) + x_dot.q().pow(2.0) + x_dot.r().pow(2.0))
     }
 }
 

@@ -223,21 +223,26 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing3DoF 
 }
 
 impl<A: Aerodynamics, E: Engine> TrimTarget<Aircraft<A, E>> for FixedWing3DoF {
-    /// Sets up the trim problem for the given setpoints and parameters.
+    /// Sets up the state and input for the given setpoints and parameters.
     ///
     /// # Arguments
     ///
+    /// * `system` - The aircraft system to trim.
     /// * `setpoints` - Must be a `DVector` of length 3 containing the setpoints for the trim problem:
     ///     * `setpoints[0]` - The desired velocity setpoint [m/s].
     ///     * `setpoints[1]` - The desired altitude setpoint [m].
     ///     * `setpoints[2]` - The desired gamma angle setpoint [deg].
     /// * `params` - The parameters for the trim problem.
+    ///     * `params[0]` - The throttle [0.0 - 1.0].
+    ///     * `params[1]` - The elevator [deg].
+    ///     * `params[2]` - The alpha angle [rad].
     ///
     /// # Returns
     ///
-    /// A tuple containing the initial state and input for the trim problem.
+    /// A tuple containing the state and input for the trim problem.
     fn setup(
         &self,
+        _system: &Aircraft<A, E>,
         setpoints: &DVector<f64>,
         params: &DVector<f64>,
     ) -> Result<(FixedWing3DoFState, FixedWing3DoFInput), TrimError> {

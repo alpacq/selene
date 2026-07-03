@@ -17,6 +17,7 @@ pub trait TrimTarget<Sys>: DynamicModel<Sys> {
     ///
     /// # Arguments
     ///
+    /// * `system` - The system the model runs against.
     /// * `setpoints` - The setpoints for the trim problem.
     /// * `params` - The optimizer parameters.
     ///
@@ -25,6 +26,7 @@ pub trait TrimTarget<Sys>: DynamicModel<Sys> {
     /// A tuple of the concrete state and input for a single cost evaluation.
     fn setup(
         &self,
+        system: &Sys,
         setpoints: &DVector<f64>,
         params: &DVector<f64>,
     ) -> Result<(Self::State, Self::Input), TrimError>;
@@ -133,7 +135,9 @@ where
             .problem
             .problem
             .expect("problem is returned by executor");
-        let (x, u) = problem.model.setup(&problem.setpoints, &best)?;
+        let (x, u) = problem
+            .model
+            .setup(&problem.system, &problem.setpoints, &best)?;
 
         Ok((x, u, cost))
     }
@@ -151,7 +155,7 @@ where
 
     /// Evaluates the cost function of the trim problem for the given parameters.
     fn cost(&self, params: &Self::Param) -> Result<Self::Output, Error> {
-        let (x, u) = self.model.setup(&self.setpoints, params)?;
+        let (x, u) = self.model.setup(&self.system, &self.setpoints, params)?;
         let x_dot = self.model.state_equations(&self.system, &x, &u);
         Ok(self.model.cost(&x_dot))
     }
@@ -243,7 +247,7 @@ impl<Sys, M: TrimTarget<Sys>> TrimProblemBuilderWithSetpoints<Sys, M> {
 }
 
 impl<Sys, M: TrimTarget<Sys>> TrimProblemBuilderWithInitialParams<Sys, M> {
-    /// Builds the trim problem with the specified initial parameter guess.
+    /// Builds the trim problem with the provided properties..
     pub fn build(self) -> TrimProblem<Sys, M> {
         TrimProblem {
             system: self.system,
