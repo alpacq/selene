@@ -14,6 +14,15 @@ use crate::{error::TrimError, model::DynamicModel};
 pub trait TrimTarget<Sys>: DynamicModel<Sys> {
     /// Maps the optimizer `params` and the `setpoints` into a concrete state
     /// and input for a single cost evaluation.
+    ///
+    /// # Arguments
+    ///
+    /// * `setpoints` - The setpoints for the trim problem.
+    /// * `params` - The optimizer parameters.
+    ///
+    /// # Returns
+    ///
+    /// A tuple of the concrete state and input for a single cost evaluation.
     fn setup(
         &self,
         setpoints: &DVector<f64>,
@@ -21,12 +30,28 @@ pub trait TrimTarget<Sys>: DynamicModel<Sys> {
     ) -> Result<(Self::State, Self::Input), TrimError>;
 
     /// Returns the cost function value for the given state derivative.
+    ///
+    /// # Arguments
+    ///
+    /// * `x_dot` - The state derivative.
+    ///
+    /// # Returns
+    ///
+    /// The cost function value.
     fn cost(&self, x_dot: &Self::State) -> f64;
 }
 
 /// Builds the initial Nelder-Mead simplex from a single seed point using the
 /// same heuristic as MATLAB's `fminsearch`: perturb each coordinate by 5%
 /// (or a small fixed step for coordinates that are exactly zero).
+///
+/// # Arguments
+///
+/// * `x0` - The seed point for the simplex.
+///
+/// # Returns
+///
+/// A vector of `x0.len() + 1` vertices forming the initial simplex.
 fn build_simplex(x0: &DVector<f64>) -> Vec<DVector<f64>> {
     const USUAL_DELTA: f64 = 0.05;
     const ZERO_DELTA: f64 = 0.00025;
@@ -65,20 +90,25 @@ impl<Sys, M> TrimProblem<Sys, M>
 where
     M: TrimTarget<Sys>,
 {
-    /// Creates a new trim problem for the given system, model, setpoints and
-    /// initial parameter guess.
-    pub fn new(
-        system: Sys,
-        model: M,
-        setpoints: DVector<f64>,
-        initial_params: DVector<f64>,
-    ) -> Self {
-        Self {
-            system,
-            model,
-            setpoints,
-            initial_params,
-        }
+    /// Returns a builder for creating a trim problem from specific
+    /// system and dynamic model.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use selene::trim::TrimProblem;
+    /// use selene::model::dynamicmodel::State2;
+    /// use selene::model::VanDerPol;
+    ///
+    /// let mut simulator = Simulator::builder()
+    ///     .for_system(VanDerPol {})
+    ///     .with_model(State2 {})
+    ///     .with_setpoints(dvector![])
+    ///     .with_initial_params(dvector![0.1, 0.1])
+    ///     .build();
+    /// ```
+    pub fn builder() -> TrimProblemBuilder {
+        TrimProblemBuilder::new()
     }
 
     /// Runs the trim and returns the trimmed state, input and final cost.
@@ -109,6 +139,9 @@ where
     }
 }
 
+/// CostFunction trait from argmin implementation for TrimProblem
+/// It is necessary to implement this trait so that the `Executor` can evaluate the cost function
+/// and perform the Nelder-Mead optimization.
 impl<Sys, M> CostFunction for TrimProblem<Sys, M>
 where
     M: TrimTarget<Sys>,
@@ -124,6 +157,103 @@ where
     }
 }
 
+/// First step in building the trim problem process
+/// Empty builder
+pub struct TrimProblemBuilder;
+
+/// Second step in building the trim problem process
+/// Requires a system to be specified
+pub struct TrimProblemBuilderWithSystem<Sys> {
+    system: Sys,
+}
+
+/// Third step in building the trim problem process
+/// Requires a dynamic model to be specified
+pub struct TrimProblemBuilderWithModel<Sys, M: TrimTarget<Sys>> {
+    system: Sys,
+    model: M,
+}
+
+/// Fourth step in building the trim problem process
+/// Requires setpoints to be specified
+pub struct TrimProblemBuilderWithSetpoints<Sys, M: TrimTarget<Sys>> {
+    system: Sys,
+    model: M,
+    setpoints: DVector<f64>,
+}
+
+/// Fifth step in building the trim problem process
+/// Requires initial parameters to be specified
+pub struct TrimProblemBuilderWithInitialParams<Sys, M: TrimTarget<Sys>> {
+    system: Sys,
+    model: M,
+    setpoints: DVector<f64>,
+    initial_params: DVector<f64>,
+}
+
+impl TrimProblemBuilder {
+    /// Returns a new empty builder for creating a trim problem.
+    pub fn new() -> Self {
+        TrimProblemBuilder
+    }
+
+    /// Specifies the system to use for the trim problem.
+    pub fn for_system<Sys>(self, system: Sys) -> TrimProblemBuilderWithSystem<Sys> {
+        TrimProblemBuilderWithSystem { system }
+    }
+}
+
+impl<Sys> TrimProblemBuilderWithSystem<Sys> {
+    /// Specifies the model to use for the trim problem.
+    pub fn with_model<M: TrimTarget<Sys>>(self, model: M) -> TrimProblemBuilderWithModel<Sys, M> {
+        TrimProblemBuilderWithModel {
+            system: self.system,
+            model,
+        }
+    }
+}
+
+impl<Sys, M: TrimTarget<Sys>> TrimProblemBuilderWithModel<Sys, M> {
+    /// Specifies the setpoints to use for the trim problem.
+    pub fn with_setpoints(
+        self,
+        setpoints: DVector<f64>,
+    ) -> TrimProblemBuilderWithSetpoints<Sys, M> {
+        TrimProblemBuilderWithSetpoints {
+            system: self.system,
+            model: self.model,
+            setpoints,
+        }
+    }
+}
+
+impl<Sys, M: TrimTarget<Sys>> TrimProblemBuilderWithSetpoints<Sys, M> {
+    /// Specifies the initial parameter guess to use for the trim problem.
+    pub fn with_initial_params(
+        self,
+        initial_params: DVector<f64>,
+    ) -> TrimProblemBuilderWithInitialParams<Sys, M> {
+        TrimProblemBuilderWithInitialParams {
+            system: self.system,
+            model: self.model,
+            setpoints: self.setpoints,
+            initial_params,
+        }
+    }
+}
+
+impl<Sys, M: TrimTarget<Sys>> TrimProblemBuilderWithInitialParams<Sys, M> {
+    /// Builds the trim problem with the specified initial parameter guess.
+    pub fn build(self) -> TrimProblem<Sys, M> {
+        TrimProblem {
+            system: self.system,
+            model: self.model,
+            setpoints: self.setpoints,
+            initial_params: self.initial_params,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -135,12 +265,14 @@ mod tests {
     #[test]
     fn test_transport_3dof_model_at_0_altitude_and_51_816_velocity()
     -> Result<(), Box<dyn std::error::Error>> {
-        let problem = TrimProblem::new(
-            Transport::new(),
-            FixedWing3DoF,
-            dvector![51.816, 0.0, 0.0], // setpoints: [vt, altitude, gamma]
-            dvector![0.1, -10.0, 0.1],  // initial params: [throttle, elevator, alpha]
-        );
+        let setpoints = dvector![51.816, 0.0, 0.0]; // setpoints: [vt, altitude, gamma]
+        let init_params = dvector![0.1, -10.0, 0.1]; // initial params: [throttle, elevator, alpha]
+        let problem = TrimProblemBuilder::new()
+            .for_system(Transport::new())
+            .with_model(FixedWing3DoF)
+            .with_setpoints(setpoints)
+            .with_initial_params(init_params)
+            .build();
         let (x, u, cost) = problem.trim()?;
         assert!(cost < 1e-6, "trim did not converge: cost = {cost}");
         assert!((u.throttle() - 0.297).abs() < 5e-3);
@@ -152,12 +284,14 @@ mod tests {
     #[test]
     fn test_transport_3dof_model_at_0_altitude_and_152_4_velocity()
     -> Result<(), Box<dyn std::error::Error>> {
-        let problem = TrimProblem::new(
-            Transport::new(),
-            FixedWing3DoF,
-            dvector![152.4, 0.0, 0.0], // setpoints: [vt, altitude, gamma]
-            dvector![0.1, -10.0, 0.1], // initial params: [throttle, elevator, alpha]
-        );
+        let setpoints = dvector![152.4, 0.0, 0.0]; // setpoints: [vt, altitude, gamma]
+        let init_params = dvector![0.1, -10.0, 0.1]; // initial params: [throttle, elevator, alpha]
+        let problem = TrimProblemBuilder::new()
+            .for_system(Transport::new())
+            .with_model(FixedWing3DoF)
+            .with_setpoints(setpoints)
+            .with_initial_params(init_params)
+            .build();
         let (x, u, cost) = problem.trim()?;
         assert!(cost < 1e-6, "trim did not converge: cost = {cost}");
         assert!((u.throttle() - 0.293).abs() < 5e-3);
@@ -169,12 +303,14 @@ mod tests {
     #[test]
     fn test_transport_3dof_model_at_9144_altitude_and_152_4_velocity()
     -> Result<(), Box<dyn std::error::Error>> {
-        let problem = TrimProblem::new(
-            Transport::new(),
-            FixedWing3DoF,
-            dvector![152.4, 9144.0, 0.0], // setpoints: [vt, altitude, gamma]
-            dvector![0.1, -10.0, 0.1],    // initial params: [throttle, elevator, alpha]
-        );
+        let setpoints = dvector![152.4, 9144.0, 0.0]; // setpoints: [vt, altitude, gamma]
+        let init_params = dvector![0.1, -10.0, 0.1]; // initial params: [throttle, elevator, alpha]
+        let problem = TrimProblemBuilder::new()
+            .for_system(Transport::new())
+            .with_model(FixedWing3DoF)
+            .with_setpoints(setpoints)
+            .with_initial_params(init_params)
+            .build();
         let (x, u, cost) = problem.trim()?;
         assert!(cost < 1e-6, "trim did not converge: cost = {cost}");
         assert!((u.throttle() - 0.204).abs() < 5e-3);

@@ -7,25 +7,25 @@ use crate::sim::rk4::rk4;
 /// The simulator for a dynamic model.
 ///
 /// Use SimulatorBuilder to create a simulator.
-pub struct Simulator<S, DM>
+pub struct Simulator<Sys, M>
 where
-    DM: DynamicModel<S>,
+    M: DynamicModel<Sys>,
 {
     /// The system being simulated.
-    system: S,
+    system: Sys,
     /// The model being simulated.
-    model: DM,
+    model: M,
     /// The current time of the simulation.
     pub time: f64,
     /// The current state of the simulation.
-    pub state: DM::State,
+    pub state: M::State,
     /// The output of the simulation.
     pub output: SimOutput,
 }
 
-impl<S, DM> Simulator<S, DM>
+impl<Sys, M> Simulator<Sys, M>
 where
-    DM: DynamicModel<S>,
+    M: DynamicModel<Sys>,
 {
     /// Returns a builder for creating a simulator from specific
     /// system and dynamic model.
@@ -57,9 +57,9 @@ where
     /// # Returns
     ///
     /// The state of the simulation after one time step.
-    pub fn step(&mut self, state: DM::State, input: &DM::Input, dt: &TimeStep) -> DM::State {
+    pub fn step(&mut self, state: M::State, input: &M::Input, dt: &TimeStep) -> M::State {
         let state = rk4(
-            |system: &S, state: &DM::State, input: &DM::Input| {
+            |system: &Sys, state: &M::State, input: &M::Input| {
                 self.model.state_equations(system, state, input)
             },
             &self.system,
@@ -80,8 +80,8 @@ where
     /// * `dt` - The time step to use for the simulation.
     pub fn run(
         &mut self,
-        initial_state: DM::State,
-        initial_input: DM::Input,
+        initial_state: M::State,
+        initial_input: M::Input,
         duration: f64,
         dt: TimeStep,
     ) {
@@ -112,24 +112,24 @@ pub struct SimulatorBuilder;
 
 /// Second step in building the simulator process
 /// Requires a system to be specified
-pub struct SimulatorBuilderWithSystem<S> {
-    system: S,
+pub struct SimulatorBuilderWithSystem<Sys> {
+    system: Sys,
 }
 
 /// Third step in building the simulator process
 /// Requires a dynamic model to be specified
-pub struct SimulatorBuilderWithModel<S, DM: DynamicModel<S>> {
-    system: S,
-    model: DM,
+pub struct SimulatorBuilderWithModel<Sys, M: DynamicModel<Sys>> {
+    system: Sys,
+    model: M,
 }
 
 /// Fourth step in building the simulator process
 /// Requires an initial state to be specified
-pub struct SimulatorBuilderWithInitialState<S, DM: DynamicModel<S>> {
-    system: S,
-    model: DM,
+pub struct SimulatorBuilderWithInitialState<Sys, M: DynamicModel<Sys>> {
+    system: Sys,
+    model: M,
     time: f64,
-    state: DM::State,
+    state: M::State,
     output: SimOutput,
 }
 
@@ -140,14 +140,14 @@ impl SimulatorBuilder {
     }
 
     /// Specifies the system to use for the simulator.
-    pub fn for_system<S>(self, system: S) -> SimulatorBuilderWithSystem<S> {
+    pub fn for_system<Sys>(self, system: Sys) -> SimulatorBuilderWithSystem<Sys> {
         SimulatorBuilderWithSystem { system }
     }
 }
 
-impl<S> SimulatorBuilderWithSystem<S> {
+impl<Sys> SimulatorBuilderWithSystem<Sys> {
     /// Specifies the model to use for the simulator.
-    pub fn with_model<DM: DynamicModel<S>>(self, model: DM) -> SimulatorBuilderWithModel<S, DM> {
+    pub fn with_model<M: DynamicModel<Sys>>(self, model: M) -> SimulatorBuilderWithModel<Sys, M> {
         SimulatorBuilderWithModel {
             system: self.system,
             model,
@@ -155,9 +155,9 @@ impl<S> SimulatorBuilderWithSystem<S> {
     }
 }
 
-impl<S, DM: DynamicModel<S>> SimulatorBuilderWithModel<S, DM> {
+impl<Sys, M: DynamicModel<Sys>> SimulatorBuilderWithModel<Sys, M> {
     /// Specifies the initial state to use for the simulator.
-    pub fn with_state(self, state: DM::State) -> SimulatorBuilderWithInitialState<S, DM> {
+    pub fn with_state(self, state: M::State) -> SimulatorBuilderWithInitialState<Sys, M> {
         SimulatorBuilderWithInitialState {
             system: self.system,
             model: self.model,
@@ -168,7 +168,7 @@ impl<S, DM: DynamicModel<S>> SimulatorBuilderWithModel<S, DM> {
     }
 }
 
-impl<S, DM: DynamicModel<S>> SimulatorBuilderWithInitialState<S, DM> {
+impl<Sys, M: DynamicModel<Sys>> SimulatorBuilderWithInitialState<Sys, M> {
     /// Specifies the time to use for the simulator.
     pub fn time(mut self, time: f64) -> Self {
         self.time = time;
@@ -176,7 +176,7 @@ impl<S, DM: DynamicModel<S>> SimulatorBuilderWithInitialState<S, DM> {
     }
 
     /// Returns the simulator with given parameters
-    pub fn build(self) -> Simulator<S, DM> {
+    pub fn build(self) -> Simulator<Sys, M> {
         Simulator {
             system: self.system,
             model: self.model,
