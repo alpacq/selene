@@ -4,6 +4,7 @@ use std::fmt;
 pub enum TrimError {
     SetpointsError(String),
     ParamsError(String),
+    ConvergenceError(String),
 }
 
 impl fmt::Display for TrimError {
@@ -11,6 +12,7 @@ impl fmt::Display for TrimError {
         match self {
             TrimError::SetpointsError(msg) => write!(f, "invalid setpoints: {msg}"),
             TrimError::ParamsError(msg) => write!(f, "invalid params: {msg}"),
+            TrimError::ConvergenceError(msg) => write!(f, "convergence error: {msg}"),
         }
     }
 }

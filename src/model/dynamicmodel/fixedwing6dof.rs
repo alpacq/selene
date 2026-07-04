@@ -438,7 +438,7 @@ impl<A: Aerodynamics, E: Engine> TrimTarget<Aircraft<A, E>> for FixedWing6DoF {
             let r = set_turn_rate * phi.cos() * theta.cos();
             (params[5], phi, theta, p, q, r)
         } else {
-            let d = if phi != 0.0 { params[2] } else { -params[2] };
+            let d = if phi != 0.0 { -params[2] } else { params[2] };
             let theta = if set_gamma.sin() != 0.0 {
                 let sgcb = set_gamma.sin() / params[5].cos();
                 d + (sgcb / (1.0 - sgcb * sgcb).sqrt()).atan()

@@ -100,3 +100,26 @@ pub fn phase_portrait(data: SimOutput, title: String) -> Result<(), Box<dyn std:
         title,
     )
 }
+
+/// Plots a standard y(x) plot of the given x and y..
+///
+/// # Arguments
+///
+/// * `x` - The x values vector.
+/// * `y` - The y values vector.
+/// * `x_label` - The label for the x-axis.
+/// * `y_label` - The label for the y-axis.
+/// * `title` - The title of the plot.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the plot is successfully created, or an error if it fails.
+pub fn yx(
+    x: Vec<f64>,
+    y: Vec<f64>,
+    x_label: String,
+    y_label: String,
+    title: String,
+) -> Result<(), Box<dyn std::error::Error>> {
+    plot(x, y, x_label, y_label, title)
+}
