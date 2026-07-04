@@ -114,32 +114,65 @@ where
     }
 
     /// Runs the trim and returns the trimmed state, input and final cost.
+    ///
+    /// A single Nelder-Mead run frequently terminates on a collapsed simplex
+    /// that is close to, but short of, the true minimum. To recover, the search
+    /// is restarted from the current best point (rebuilding a fresh simplex)
+    /// until it converges or a restart no longer makes progress. This mirrors
+    /// the restart loop used by the Stevens & Lewis trimmer.
     pub fn trim(self) -> Result<(M::State, M::Input, f64), Error> {
-        let simplex = build_simplex(&self.initial_params);
-        let solver = NelderMead::new(simplex).with_sd_tolerance(1e-8)?;
+        /// Maximum number of simplex restarts before giving up.
+        const MAX_RESTARTS: usize = 50;
+        /// Cost below which the trim is considered converged.
+        const COST_TOLERANCE: f64 = 1e-12;
 
-        let res = Executor::new(self, solver)
-            .configure(|state| state.max_iters(1000))
-            .run()?;
+        let mut problem = self;
+        let mut seed = problem.initial_params.clone();
+        let mut best_param = seed.clone();
+        let mut best_cost = f64::INFINITY;
 
-        let best = res
-            .state()
-            .get_best_param()
-            .ok_or_else(|| Error::msg("trim: no best parameter found"))?
-            .clone();
-        let cost = res.state().get_best_cost();
+        for _ in 0..MAX_RESTARTS {
+            let simplex = build_simplex(&seed);
+            let solver = NelderMead::new(simplex).with_sd_tolerance(1e-10)?;
+
+            let res = Executor::new(problem, solver)
+                .configure(|state| state.max_iters(1000))
+                .run()?;
+
+            let cost = res.state().get_best_cost();
+            let param = res
+                .state()
+                .get_best_param()
+                .ok_or_else(|| Error::msg("trim: no best parameter found"))?
+                .clone();
+
+            // Reclaim the problem so the next restart (or the final state
+            // reconstruction) can reuse it.
+            problem = res
+                .problem
+                .problem
+                .expect("problem is returned by executor");
+
+            let improved = cost + f64::EPSILON < best_cost;
+            if cost < best_cost {
+                best_cost = cost;
+                best_param = param;
+            }
+
+            // Stop once converged, or when a restart stops making progress.
+            if best_cost < COST_TOLERANCE || !improved {
+                break;
+            }
+            seed = best_param.clone();
+        }
 
         // Rebuild the trimmed state and input from the minimizing vector,
         // reusing the exact same mapping as the cost evaluation.
-        let problem = res
-            .problem
-            .problem
-            .expect("problem is returned by executor");
         let (x, u) = problem
             .model
-            .setup(&problem.system, &problem.setpoints, &best)?;
+            .setup(&problem.system, &problem.setpoints, &best_param)?;
 
-        Ok((x, u, cost))
+        Ok((x, u, best_cost))
     }
 }
 
@@ -261,9 +294,11 @@ impl<Sys, M: TrimTarget<Sys>> TrimProblemBuilderWithInitialParams<Sys, M> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::F16;
     use crate::model::RAD_TO_DEG;
     use crate::model::Transport;
     use crate::model::dynamicmodel::fixedwing3dof::FixedWing3DoF;
+    use crate::model::dynamicmodel::fixedwing6dof::FixedWing6DoF;
     use nalgebra::dvector;
 
     #[test]
@@ -320,6 +355,45 @@ mod tests {
         assert!((u.throttle() - 0.204).abs() < 5e-3);
         assert!((u.elevator() + 4.1).abs() < 5e-2);
         assert!((x.alpha() * RAD_TO_DEG - 5.43).abs() < 5e-2);
+        Ok(())
+    }
+
+    #[test]
+    fn test_f16_6dof_model_at_0_altitude_and_152_1_velocity_coordinated_turn()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let setpoints = dvector![
+            152.1, // vt [m/s]
+            0.0,   // altitude [m]
+            0.0,   // gamma [deg]
+            0.0,   // roll rate [rad/s]
+            0.0,   // pitch rate [rad/s]
+            0.15,  // turn rate [rad/s]
+            0.0,   // phi [rad] — calculated by solver for coordinated turn
+            1.0,   // setpoint for coordinated turn
+        ];
+        let init_params = dvector![
+            0.2,  // throttle
+            1.0,  // elevator
+            0.02, // alpha
+            1.0,  // aileron
+            1.0,  // rudder
+            0.02, // beta
+        ];
+        let problem = TrimProblemBuilder::new()
+            .for_system(F16::new())
+            .with_model(FixedWing6DoF)
+            .with_setpoints(setpoints)
+            .with_initial_params(init_params)
+            .build();
+        let (x, u, cost) = problem.trim()?;
+        assert!(cost < 1e-6, "trim did not converge: cost = {cost}");
+        // Coordinated turn => essentially zero sideslip.
+        assert!(x.beta().abs() * RAD_TO_DEG < 1.0);
+        // Bank angle is fixed by the turn-coordination kinematics (~67 deg).
+        assert!((x.phi() * RAD_TO_DEG - 66.9).abs() < 1.0);
+        // Steady-state angle of attack and throttle for the turn.
+        assert!((x.alpha() * RAD_TO_DEG - 7.0).abs() < 0.5);
+        assert!((u.throttle() - 0.72).abs() < 0.03);
         Ok(())
     }
 }

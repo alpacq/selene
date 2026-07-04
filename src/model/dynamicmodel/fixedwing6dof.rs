@@ -127,20 +127,20 @@ pub struct FixedWing6DoFInput {
 impl FixedWing6DoFInput {
     /// throttle position [0..1]
     pub fn throttle(&self) -> f64 {
-        self.input_vector[0]
+        self.input_vector[0].clamp(0.0, 1.0)
     }
 
-    /// elevator position [-1..1]
+    /// elevator position [deg]
     pub fn elevator(&self) -> f64 {
         self.input_vector[1]
     }
 
-    /// aileron position [-1..1]
+    /// aileron position [deg]
     pub fn aileron(&self) -> f64 {
         self.input_vector[2]
     }
 
-    /// rudder position [-1..1]
+    /// rudder position [deg]
     pub fn rudder(&self) -> f64 {
         self.input_vector[3]
     }
@@ -347,14 +347,15 @@ impl<A: Aerodynamics, E: Engine> TrimTarget<Aircraft<A, E>> for FixedWing6DoF {
     /// # Arguments
     ///
     /// * `system` - The aircraft system to trim.
-    /// * `setpoints` - Must be a `DVector` of length 3 containing the setpoints for the trim problem:
+    /// * `setpoints` - Must be a `DVector` of length 8 containing the setpoints for the trim problem:
     ///     * `setpoints[0]` - The desired velocity setpoint [m/s].
     ///     * `setpoints[1]` - The desired altitude setpoint [m].
     ///     * `setpoints[2]` - The desired gamma angle setpoint [deg].
-    ///     * `setpoints[3]` - The desired pitch rate setpoint [deg/s].
-    ///     * `setpoints[4]` - The desired turn rate setpoint [deg/s].
-    ///     * `setpoints[5]` - The desired phi angle setpoint [deg].
-    ///     * `setpoints[6]` - The desired coordinated turn or skidding turn mode (1.0 for coordinated turn, 2.0 for skidding turn).
+    ///     * `setpoints[3]` - The desired roll rate setpoint [rad/s].
+    ///     * `setpoints[4]` - The desired pitch rate setpoint [rad/s].
+    ///     * `setpoints[5]` - The desired turn rate setpoint [rad/s].
+    ///     * `setpoints[6]` - The desired phi angle setpoint [rad].
+    ///     * `setpoints[7]` - The coordinated turn 'boolean' (1.0 for coordinated turn).
     /// * `params` - The parameters for the trim problem.
     ///     * `params[0]` - The throttle [0.0 - 1.0].
     ///     * `params[1]` - The elevator [deg].
@@ -372,9 +373,9 @@ impl<A: Aerodynamics, E: Engine> TrimTarget<Aircraft<A, E>> for FixedWing6DoF {
         setpoints: &DVector<f64>,
         params: &DVector<f64>,
     ) -> Result<(FixedWing6DoFState, FixedWing6DoFInput), TrimError> {
-        if setpoints.len() != 9 {
+        if setpoints.len() != 8 {
             return Err(TrimError::SetpointsError(
-                "setpoints must have length 7".to_string(),
+                "setpoints must have length 8".to_string(),
             ));
         }
         if params.len() != 6 {
@@ -394,34 +395,69 @@ impl<A: Aerodynamics, E: Engine> TrimTarget<Aircraft<A, E>> for FixedWing6DoF {
 
         // control inputs vector [throttle, elevator, aileron, rudder]
         let u = FixedWing6DoFInput {
-            input_vector: dvector![params[0], params[1], params[3], params[4]],
+            input_vector: dvector![params[0], params[1], params[3], params[4], 0.35],
         };
 
-        // coordinated turn or skidding turn logic
-        if setpoints[7] == 1.0 {
-            // TODO coordinated turn logic
-        } else if set_turn_rate != 0.0 {
-            // TODO skidding turn logic
-        }
+        // coordinated turn / skidding turn / non-turning flight
+        let (beta, phi, theta, p, q, r) = if setpoints[7] == 1.0 {
+            let alpha = params[2];
+            let beta = params[5];
+            let g = set_turn_rate * set_vt / GRAVITY;
 
-        let d = if phi != 0.0 { params[2] } else { -params[2] };
-        let theta = if set_gamma.sin() != 0.0 {
+            // turn-coordination constraint -> bank angle phi
+            let a = 1.0 - g * alpha.tan() * beta.sin();
+            let b = set_gamma.sin() / beta.cos();
+            let c = 1.0 + g * g * beta.cos() * beta.cos();
+            let phi = ((g
+                * beta.cos()
+                * ((a - b * b)
+                    + b * alpha.tan()
+                        * (c * (1.0 - b * b) + g * g * beta.sin() * beta.sin()).sqrt()))
+                / (alpha.cos() * (a * a - b * b * (1.0 + c * alpha.tan() * alpha.tan()))))
+            .atan();
+
+            // rate-of-climb constraint -> pitch angle theta
+            let a = alpha.cos() * beta.cos();
+            let b = phi.sin() * beta.sin() + phi.cos() * alpha.sin() * beta.cos();
+            let theta = ((a * b
+                + set_gamma.sin() * (a * a - set_gamma.sin() * set_gamma.sin() + b * b).sqrt())
+                / (a * a - set_gamma.sin() * set_gamma.sin()))
+            .atan();
+
+            // steady-turn body-axis rates
+            let p = -set_turn_rate * theta.sin();
+            let q = set_turn_rate * phi.sin() * theta.cos();
+            let r = set_turn_rate * phi.cos() * theta.cos();
+            (beta, phi, theta, p, q, r)
+        } else if set_turn_rate != 0.0 {
+            let phi = 0.0_f64;
             let sgcb = set_gamma.sin() / params[5].cos();
-            d + (sgcb / (1.0 - sgcb * sgcb).sqrt()).atan()
+            let theta = params[2] + (sgcb / (1.0 - sgcb * sgcb).sqrt()).atan();
+            let p = 0.0;
+            let q = set_turn_rate * phi.sin() * theta.cos();
+            let r = set_turn_rate * phi.cos() * theta.cos();
+            (params[5], phi, theta, p, q, r)
         } else {
-            d
+            let d = if phi != 0.0 { params[2] } else { -params[2] };
+            let theta = if set_gamma.sin() != 0.0 {
+                let sgcb = set_gamma.sin() / params[5].cos();
+                d + (sgcb / (1.0 - sgcb * sgcb).sqrt()).atan()
+            } else {
+                d
+            };
+            (params[5], phi, theta, set_roll_rate, set_pitch_rate, 0.0)
         };
 
         let x = FixedWing6DoFState::new(dvector![
             set_vt,
             params[2],
-            params[5],
+            beta,
             phi,
             theta,
             0.0,
-            set_roll_rate,
-            set_pitch_rate,
-            0.0,
+            p,
+            q,
+            r,
             0.0,
             0.0,
             set_altitude,

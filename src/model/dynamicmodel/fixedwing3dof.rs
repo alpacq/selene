@@ -152,30 +152,10 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing3DoF 
         let sin_gamma = gamma.sin();
         let cos_gamma = gamma.cos();
 
-        let cl0 = if u.landing_gear_position() == 0.0 {
-            0.2
+        let (cl0, cd0, cm0, dcdg, dcmg) = if u.landing_gear_position() == 0.0 {
+            (0.2, 0.016, 0.05, 0.0, 0.0)
         } else {
-            1.0
-        };
-        let cd0 = if u.landing_gear_position() == 0.0 {
-            0.016
-        } else {
-            0.08
-        };
-        let cm0 = if u.landing_gear_position() == 0.0 {
-            0.05
-        } else {
-            -0.2
-        };
-        let dcdg = if u.landing_gear_position() == 0.0 {
-            0.0
-        } else {
-            0.02
-        };
-        let dcmg = if u.landing_gear_position() == 0.0 {
-            0.0
-        } else {
-            -0.05
+            (1.0, 0.08, -0.2, 0.02, -0.05)
         };
 
         let thrust = system.engine.thrust(u.throttle(), x.altitude(), mach);
