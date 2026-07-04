@@ -19,3 +19,6 @@ pub trait IntegrableState: SizedVector {
     /// Creates an [`IntegrableState`] from a [`DVector`]
     fn from_vector(vector: DVector<f64>) -> Self;
 }
+
+#[cfg(test)]
+pub mod test_utils;

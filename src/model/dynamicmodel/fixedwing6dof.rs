@@ -480,6 +480,7 @@ mod tests {
     use crate::model::F16;
 
     use super::*;
+    use crate::math::test_utils::assert_approx;
     use nalgebra::dvector;
 
     fn prepare_model() -> FixedWing6DoFState {
@@ -497,66 +498,59 @@ mod tests {
 
     const EPSILON: f64 = 1e-3;
 
-    fn assert_approx(actual: f64, expected: f64, name: &str) {
-        assert!(
-            (actual - expected).abs() < EPSILON,
-            "{name}: expected {expected}, got {actual}"
-        );
-    }
-
     #[test]
     fn textbook_model_test_vt() {
-        assert_approx(prepare_model().vt(), -22.933428, "vt_dot");
+        assert_approx(prepare_model().vt(), -22.933428, EPSILON, "vt_dot");
     }
 
     #[test]
     fn textbook_model_test_alpha() {
-        assert_approx(prepare_model().alpha(), -0.8813417, "alpha_dot");
+        assert_approx(prepare_model().alpha(), -0.8813417, EPSILON, "alpha_dot");
     }
 
     #[test]
     fn textbook_model_test_beta() {
-        assert_approx(prepare_model().beta(), -0.4760048, "beta_dot");
+        assert_approx(prepare_model().beta(), -0.4760048, EPSILON, "beta_dot");
     }
 
     #[test]
     fn textbook_model_test_phi() {
-        assert_approx(prepare_model().phi(), 2.505734, "phi_dot");
+        assert_approx(prepare_model().phi(), 2.505734, EPSILON, "phi_dot");
     }
 
     #[test]
     fn textbook_model_test_theta() {
-        assert_approx(prepare_model().theta(), 0.3250820, "theta_dot");
+        assert_approx(prepare_model().theta(), 0.3250820, EPSILON, "theta_dot");
     }
 
     #[test]
     fn textbook_model_test_psi() {
-        assert_approx(prepare_model().psi(), 2.145926, "psi_dot");
+        assert_approx(prepare_model().psi(), 2.145926, EPSILON, "psi_dot");
     }
 
     #[test]
     fn textbook_model_test_p() {
-        assert_approx(prepare_model().p(), 12.62395, "p_dot");
+        assert_approx(prepare_model().p(), 12.62395, EPSILON, "p_dot");
     }
 
     #[test]
     fn textbook_model_test_q() {
-        assert_approx(prepare_model().q(), 0.9648011, "q_dot");
+        assert_approx(prepare_model().q(), 0.9648011, EPSILON, "q_dot");
     }
 
     #[test]
     fn textbook_model_test_r() {
-        assert_approx(prepare_model().r(), 0.5809014, "r_dot");
+        assert_approx(prepare_model().r(), 0.5809014, EPSILON, "r_dot");
     }
 
     #[test]
     fn textbook_model_test_altitude() {
-        assert_approx(prepare_model().altitude(), 75.629, "altitude_dot");
+        assert_approx(prepare_model().altitude(), 75.629, EPSILON, "altitude_dot");
     }
 
     #[test]
     fn textbook_model_test_power() {
-        assert_approx(prepare_model().power(), -58.68999, "power_dot");
+        assert_approx(prepare_model().power(), -58.68999, EPSILON, "power_dot");
     }
 
     /// Trimmed level flight at sea level (nominal cg) must match Stevens &
@@ -596,20 +590,23 @@ mod tests {
             let (x, u, cost) = problem.trim().expect("trim returned an error");
 
             assert!(cost < 1e-6, "vt={v_fts} ft/s did not converge: cost={cost}");
-            assert!(
-                (u.throttle() - throttle).abs() < 5e-3,
-                "vt={v_fts} ft/s throttle: expected {throttle}, got {}",
-                u.throttle()
+            assert_approx(
+                u.throttle(),
+                throttle,
+                5e-3,
+                format!("throttle at {} m/s", vt).as_str(),
             );
-            assert!(
-                (x.alpha() * RAD_TO_DEG - aoa).abs() < 5e-2,
-                "vt={v_fts} ft/s AOA: expected {aoa}, got {}",
-                x.alpha() * RAD_TO_DEG
+            assert_approx(
+                x.alpha() * RAD_TO_DEG,
+                aoa,
+                5e-2,
+                format!("AOA at {} m/s", vt).as_str(),
             );
-            assert!(
-                (u.elevator() - elevator).abs() < 5e-2,
-                "vt={v_fts} ft/s elevator: expected {elevator}, got {}",
-                u.elevator()
+            assert_approx(
+                u.elevator(),
+                elevator,
+                5e-2,
+                format!("elevator at {} m/s", vt).as_str(),
             );
         }
     }

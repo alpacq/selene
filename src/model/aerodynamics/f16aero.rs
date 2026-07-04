@@ -327,15 +327,9 @@ impl Aerodynamics for F16Aero {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::math::test_utils::assert_approx;
 
     const EPSILON: f64 = 1e-6;
-
-    fn assert_approx(actual: f64, expected: f64, name: &str) {
-        assert!(
-            (actual - expected).abs() < EPSILON,
-            "{name}: expected {expected}, got {actual}"
-        );
-    }
 
     fn aero() -> F16Aero {
         F16Aero
@@ -348,24 +342,24 @@ mod tests {
     #[test]
     fn cxq_node_at_0_deg() {
         // alpha=0 deg is a grid node, no interpolation
-        assert_approx(aero().cxq(0.0), 0.308, "cxq node 0deg");
+        assert_approx(aero().cxq(0.0), 0.308, EPSILON, "cxq node 0deg");
     }
 
     #[test]
     fn cxq_node_at_25_deg() {
-        assert_approx(aero().cxq(25.0), 2.05, "cxq node 25deg");
+        assert_approx(aero().cxq(25.0), 2.05, EPSILON, "cxq node 25deg");
     }
 
     #[test]
     fn cxq_midpoint_7_5_deg() {
         // midpoint between 5 deg (1.34) and 10 deg (2.08) => 1.71
-        assert_approx(aero().cxq(7.5), 1.71, "cxq mid 7.5deg");
+        assert_approx(aero().cxq(7.5), 1.71, EPSILON, "cxq mid 7.5deg");
     }
 
     #[test]
     fn cxq_clamp_above_45_deg() {
         // alpha=50 clamps to 45 deg => 0.59
-        assert_approx(aero().cxq(50.0), 0.590, "cxq clamp 50deg");
+        assert_approx(aero().cxq(50.0), 0.590, EPSILON, "cxq clamp 50deg");
     }
 
     // ----------------------------------------------------------------
@@ -374,17 +368,17 @@ mod tests {
 
     #[test]
     fn cyr_node_at_0_deg() {
-        assert_approx(aero().cyr(0.0), 0.876, "cyr node 0deg");
+        assert_approx(aero().cyr(0.0), 0.876, EPSILON, "cyr node 0deg");
     }
 
     #[test]
     fn cyr_node_at_25_deg() {
-        assert_approx(aero().cyr(25.0), 0.483, "cyr node 25deg");
+        assert_approx(aero().cyr(25.0), 0.483, EPSILON, "cyr node 25deg");
     }
 
     #[test]
     fn cyr_clamp_above_45_deg() {
-        assert_approx(aero().cyr(50.0), -1.587, "cyr clamp 50deg");
+        assert_approx(aero().cyr(50.0), -1.587, EPSILON, "cyr clamp 50deg");
     }
 
     // ----------------------------------------------------------------
@@ -393,18 +387,18 @@ mod tests {
 
     #[test]
     fn cyp_node_at_0_deg() {
-        assert_approx(aero().cyp(0.0), -0.188, "cyp node 0deg");
+        assert_approx(aero().cyp(0.0), -0.188, EPSILON, "cyp node 0deg");
     }
 
     #[test]
     fn cyp_node_at_25_deg() {
-        assert_approx(aero().cyp(25.0), 0.362, "cyp node 25deg");
+        assert_approx(aero().cyp(25.0), 0.362, EPSILON, "cyp node 25deg");
     }
 
     #[test]
     fn cyp_midpoint_7_5_deg() {
         // midpoint between 5 deg (0.110) and 10 deg (0.258) => 0.184
-        assert_approx(aero().cyp(7.5), 0.184, "cyp mid 7.5deg");
+        assert_approx(aero().cyp(7.5), 0.184, EPSILON, "cyp mid 7.5deg");
     }
 
     // ----------------------------------------------------------------
@@ -413,18 +407,18 @@ mod tests {
 
     #[test]
     fn czq_node_at_0_deg() {
-        assert_approx(aero().czq(0.0), -28.9, "czq node 0deg");
+        assert_approx(aero().czq(0.0), -28.9, EPSILON, "czq node 0deg");
     }
 
     #[test]
     fn czq_node_at_25_deg() {
-        assert_approx(aero().czq(25.0), -28.2, "czq node 25deg");
+        assert_approx(aero().czq(25.0), -28.2, EPSILON, "czq node 25deg");
     }
 
     #[test]
     fn czq_midpoint_7_5_deg() {
         // midpoint between 5 deg (-31.4) and 10 deg (-31.2) => -31.3
-        assert_approx(aero().czq(7.5), -31.3, "czq mid 7.5deg");
+        assert_approx(aero().czq(7.5), -31.3, EPSILON, "czq mid 7.5deg");
     }
 
     // ----------------------------------------------------------------
@@ -433,18 +427,18 @@ mod tests {
 
     #[test]
     fn clr_node_at_0_deg() {
-        assert_approx(aero().clr(0.0), 0.063, "clr node 0deg");
+        assert_approx(aero().clr(0.0), 0.063, EPSILON, "clr node 0deg");
     }
 
     #[test]
     fn clr_node_at_25_deg() {
-        assert_approx(aero().clr(25.0), 0.437, "clr node 25deg");
+        assert_approx(aero().clr(25.0), 0.437, EPSILON, "clr node 25deg");
     }
 
     #[test]
     fn clr_midpoint_7_5_deg() {
         // midpoint between 5 deg (0.113) and 10 deg (0.208) => 0.1605
-        assert_approx(aero().clr(7.5), 0.1605, "clr mid 7.5deg");
+        assert_approx(aero().clr(7.5), 0.1605, EPSILON, "clr mid 7.5deg");
     }
 
     // ----------------------------------------------------------------
@@ -453,18 +447,18 @@ mod tests {
 
     #[test]
     fn clp_node_at_0_deg() {
-        assert_approx(aero().clp(0.0), -0.443, "clp node 0deg");
+        assert_approx(aero().clp(0.0), -0.443, EPSILON, "clp node 0deg");
     }
 
     #[test]
     fn clp_node_at_25_deg() {
-        assert_approx(aero().clp(25.0), -0.294, "clp node 25deg");
+        assert_approx(aero().clp(25.0), -0.294, EPSILON, "clp node 25deg");
     }
 
     #[test]
     fn clp_midpoint_7_5_deg() {
         // midpoint between 5 deg (-0.420) and 10 deg (-0.383) => -0.4015
-        assert_approx(aero().clp(7.5), -0.4015, "clp mid 7.5deg");
+        assert_approx(aero().clp(7.5), -0.4015, EPSILON, "clp mid 7.5deg");
     }
 
     // ----------------------------------------------------------------
@@ -473,18 +467,18 @@ mod tests {
 
     #[test]
     fn cmq_node_at_0_deg() {
-        assert_approx(aero().cmq(0.0), -5.23, "cmq node 0deg");
+        assert_approx(aero().cmq(0.0), -5.23, EPSILON, "cmq node 0deg");
     }
 
     #[test]
     fn cmq_node_at_25_deg() {
-        assert_approx(aero().cmq(25.0), -6.0, "cmq node 25deg");
+        assert_approx(aero().cmq(25.0), -6.0, EPSILON, "cmq node 25deg");
     }
 
     #[test]
     fn cmq_midpoint_7_5_deg() {
         // midpoint between 5 deg (-5.26) and 10 deg (-6.11) => -5.685
-        assert_approx(aero().cmq(7.5), -5.685, "cmq mid 7.5deg");
+        assert_approx(aero().cmq(7.5), -5.685, EPSILON, "cmq mid 7.5deg");
     }
 
     // ----------------------------------------------------------------
@@ -493,17 +487,17 @@ mod tests {
 
     #[test]
     fn cnr_node_at_0_deg() {
-        assert_approx(aero().cnr(0.0), -0.378, "cnr node 0deg");
+        assert_approx(aero().cnr(0.0), -0.378, EPSILON, "cnr node 0deg");
     }
 
     #[test]
     fn cnr_node_at_25_deg() {
-        assert_approx(aero().cnr(25.0), -0.582, "cnr node 25deg");
+        assert_approx(aero().cnr(25.0), -0.582, EPSILON, "cnr node 25deg");
     }
 
     #[test]
     fn cnr_clamp_above_45_deg() {
-        assert_approx(aero().cnr(50.0), -0.660, "cnr clamp 50deg");
+        assert_approx(aero().cnr(50.0), -0.660, EPSILON, "cnr clamp 50deg");
     }
 
     // ----------------------------------------------------------------
@@ -512,18 +506,18 @@ mod tests {
 
     #[test]
     fn cnp_node_at_0_deg() {
-        assert_approx(aero().cnp(0.0), 0.052, "cnp node 0deg");
+        assert_approx(aero().cnp(0.0), 0.052, EPSILON, "cnp node 0deg");
     }
 
     #[test]
     fn cnp_node_at_25_deg() {
-        assert_approx(aero().cnp(25.0), 0.150, "cnp node 25deg");
+        assert_approx(aero().cnp(25.0), 0.150, EPSILON, "cnp node 25deg");
     }
 
     #[test]
     fn cnp_midpoint_7_5_deg() {
         // midpoint between 5 deg (-0.012) and 10 deg (-0.013) => -0.0125
-        assert_approx(aero().cnp(7.5), -0.0125, "cnp mid 7.5deg");
+        assert_approx(aero().cnp(7.5), -0.0125, EPSILON, "cnp mid 7.5deg");
     }
 
     // ----------------------------------------------------------------
@@ -533,25 +527,40 @@ mod tests {
     #[test]
     fn cx_node_alpha0_el0() {
         // both axes on grid nodes => exact table value
-        assert_approx(aero().cx(0.0, 0.0), -0.021, "cx node alpha=0 el=0");
+        assert_approx(aero().cx(0.0, 0.0), -0.021, EPSILON, "cx node alpha=0 el=0");
     }
 
     #[test]
     fn cx_node_alpha20_el12() {
-        assert_approx(aero().cx(20.0, 12.0), 0.087, "cx node alpha=20 el=12");
+        assert_approx(
+            aero().cx(20.0, 12.0),
+            0.087,
+            EPSILON,
+            "cx node alpha=20 el=12",
+        );
     }
 
     #[test]
     fn cx_midpoint_alpha7_5_el6() {
         // alpha midpoint between 5 and 10 deg, el midpoint between 0 and 12 deg
         // => 0.00225
-        assert_approx(aero().cx(7.5, 6.0), 0.00225, "cx mid alpha=7.5 el=6");
+        assert_approx(
+            aero().cx(7.5, 6.0),
+            0.00225,
+            EPSILON,
+            "cx mid alpha=7.5 el=6",
+        );
     }
 
     #[test]
     fn cx_clamp_alpha50_el30() {
         // alpha clamps to 45 deg, el clamps to 24 deg => 0.0105
-        assert_approx(aero().cx(50.0, 30.0), 0.0105, "cx clamp alpha=50 el=30");
+        assert_approx(
+            aero().cx(50.0, 30.0),
+            0.0105,
+            EPSILON,
+            "cx clamp alpha=50 el=30",
+        );
     }
 
     // ----------------------------------------------------------------
@@ -560,19 +569,29 @@ mod tests {
 
     #[test]
     fn cy_all_zero() {
-        assert_approx(aero().cy(0.0, 0.0, 0.0), 0.0, "cy all zero");
+        assert_approx(aero().cy(0.0, 0.0, 0.0), 0.0, EPSILON, "cy all zero");
     }
 
     #[test]
     fn cy_positive_inputs() {
         // beta=5, ail=10, rdr=15 => -0.1 + 0.0105 + 0.043 = -0.0465
-        assert_approx(aero().cy(5.0, 10.0, 15.0), -0.0465, "cy positive inputs");
+        assert_approx(
+            aero().cy(5.0, 10.0, 15.0),
+            -0.0465,
+            EPSILON,
+            "cy positive inputs",
+        );
     }
 
     #[test]
     fn cy_mixed_sign_inputs() {
         // beta=-10, ail=-20, rdr=30 => 0.2 - 0.021 + 0.086 = 0.265
-        assert_approx(aero().cy(-10.0, -20.0, 30.0), 0.265, "cy mixed sign inputs");
+        assert_approx(
+            aero().cy(-10.0, -20.0, 30.0),
+            0.265,
+            EPSILON,
+            "cy mixed sign inputs",
+        );
     }
 
     // ----------------------------------------------------------------
@@ -585,6 +604,7 @@ mod tests {
         assert_approx(
             aero().cz(0.0, 0.0, 0.0),
             -0.100,
+            EPSILON,
             "cz node alpha=0 beta=0 el=0",
         );
     }
@@ -596,6 +616,7 @@ mod tests {
         assert_approx(
             aero().cz(10.0, 5.0, 12.0),
             -0.816634,
+            EPSILON,
             "cz alpha=10 beta=5 el=12",
         );
     }
@@ -603,7 +624,12 @@ mod tests {
     #[test]
     fn cz_clamp_alpha50() {
         // alpha=50 clamps to 45 deg => base=-2.21, no beta/el correction
-        assert_approx(aero().cz(50.0, 0.0, 0.0), -2.21, "cz clamp alpha=50");
+        assert_approx(
+            aero().cz(50.0, 0.0, 0.0),
+            -2.21,
+            EPSILON,
+            "cz clamp alpha=50",
+        );
     }
 
     // ----------------------------------------------------------------
@@ -612,18 +638,28 @@ mod tests {
 
     #[test]
     fn cm_node_alpha0_el0() {
-        assert_approx(aero().cm(0.0, 0.0), -0.009, "cm node alpha=0 el=0");
+        assert_approx(aero().cm(0.0, 0.0), -0.009, EPSILON, "cm node alpha=0 el=0");
     }
 
     #[test]
     fn cm_node_alpha20_el12() {
-        assert_approx(aero().cm(20.0, 12.0), -0.097, "cm node alpha=20 el=12");
+        assert_approx(
+            aero().cm(20.0, 12.0),
+            -0.097,
+            EPSILON,
+            "cm node alpha=20 el=12",
+        );
     }
 
     #[test]
     fn cm_midpoint_alpha7_5_el6() {
         // => -0.06675
-        assert_approx(aero().cm(7.5, 6.0), -0.06675, "cm mid alpha=7.5 el=6");
+        assert_approx(
+            aero().cm(7.5, 6.0),
+            -0.06675,
+            EPSILON,
+            "cm mid alpha=7.5 el=6",
+        );
     }
 
     // ----------------------------------------------------------------
@@ -636,19 +672,29 @@ mod tests {
     #[test]
     fn cl_zero_beta_returns_zero_aero_plus_signum() {
         // beta=0 => signum=0, table value at alpha=0/beta=0 is 0.0 => total 0.0
-        assert_approx(aero().cl(0.0, 0.0), 0.0, "cl beta=0");
+        assert_approx(aero().cl(0.0, 0.0), 0.0, EPSILON, "cl beta=0");
     }
 
     #[test]
     fn cl_positive_beta_node() {
         // alpha=20, beta=10 => table s=-0.040, sign=+1 => total=-0.040
-        assert_approx(aero().cl(20.0, 10.0), -0.040, "cl alpha=20 beta=10");
+        assert_approx(
+            aero().cl(20.0, 10.0),
+            -0.040,
+            EPSILON,
+            "cl alpha=20 beta=10",
+        );
     }
 
     #[test]
     fn cl_negative_beta_node() {
         // alpha=10, beta=-10 => table s=-0.030, sign=-1 => total=+0.030
-        assert_approx(aero().cl(10.0, -10.0), 0.030, "cl alpha=10 beta=-10");
+        assert_approx(
+            aero().cl(10.0, -10.0),
+            0.030,
+            EPSILON,
+            "cl alpha=10 beta=-10",
+        );
     }
 
     // ----------------------------------------------------------------
@@ -658,19 +704,24 @@ mod tests {
     #[test]
     fn cn_zero_beta() {
         // beta=0 => signum=0, table value at alpha=0/|beta|=0 is 0.0
-        assert_approx(aero().cn(0.0, 0.0), 0.0, "cn beta=0");
+        assert_approx(aero().cn(0.0, 0.0), 0.0, EPSILON, "cn beta=0");
     }
 
     #[test]
     fn cn_positive_beta_node() {
         // alpha=15, beta=15 => table s=0.053, sign=+1 => total=0.053
-        assert_approx(aero().cn(15.0, 15.0), 0.053, "cn alpha=15 beta=15");
+        assert_approx(aero().cn(15.0, 15.0), 0.053, EPSILON, "cn alpha=15 beta=15");
     }
 
     #[test]
     fn cn_negative_beta_node() {
         // alpha=0, beta=-10 => table s=0.042, sign=-1 => total=-0.042
-        assert_approx(aero().cn(0.0, -10.0), -0.042, "cn alpha=0 beta=-10");
+        assert_approx(
+            aero().cn(0.0, -10.0),
+            -0.042,
+            EPSILON,
+            "cn alpha=0 beta=-10",
+        );
     }
 
     // ----------------------------------------------------------------
@@ -679,7 +730,12 @@ mod tests {
 
     #[test]
     fn dlda_node_alpha0_beta0() {
-        assert_approx(aero().dlda(0.0, 0.0), -0.051, "dlda node alpha=0 beta=0");
+        assert_approx(
+            aero().dlda(0.0, 0.0),
+            -0.051,
+            EPSILON,
+            "dlda node alpha=0 beta=0",
+        );
     }
 
     #[test]
@@ -687,6 +743,7 @@ mod tests {
         assert_approx(
             aero().dlda(20.0, 10.0),
             -0.042,
+            EPSILON,
             "dlda node alpha=20 beta=10",
         );
     }
@@ -697,6 +754,7 @@ mod tests {
         assert_approx(
             aero().dlda(0.0, -10.0),
             -0.052,
+            EPSILON,
             "dlda node alpha=0 beta=-10",
         );
     }
@@ -704,7 +762,12 @@ mod tests {
     #[test]
     fn dlda_midpoint_alpha7_5_beta5() {
         // => -0.048
-        assert_approx(aero().dlda(7.5, 5.0), -0.048, "dlda mid alpha=7.5 beta=5");
+        assert_approx(
+            aero().dlda(7.5, 5.0),
+            -0.048,
+            EPSILON,
+            "dlda mid alpha=7.5 beta=5",
+        );
     }
 
     // ----------------------------------------------------------------
@@ -713,7 +776,12 @@ mod tests {
 
     #[test]
     fn dldr_node_alpha0_beta0() {
-        assert_approx(aero().dldr(0.0, 0.0), 0.015, "dldr node alpha=0 beta=0");
+        assert_approx(
+            aero().dldr(0.0, 0.0),
+            0.015,
+            EPSILON,
+            "dldr node alpha=0 beta=0",
+        );
     }
 
     #[test]
@@ -721,6 +789,7 @@ mod tests {
         assert_approx(
             aero().dldr(10.0, -20.0),
             0.013,
+            EPSILON,
             "dldr node alpha=10 beta=-20",
         );
     }
@@ -731,6 +800,7 @@ mod tests {
         assert_approx(
             aero().dldr(12.5, 15.0),
             0.0105,
+            EPSILON,
             "dldr mid alpha=12.5 beta=15",
         );
     }
@@ -741,7 +811,12 @@ mod tests {
 
     #[test]
     fn dnda_node_alpha0_beta0() {
-        assert_approx(aero().dnda(0.0, 0.0), -0.010, "dnda node alpha=0 beta=0");
+        assert_approx(
+            aero().dnda(0.0, 0.0),
+            -0.010,
+            EPSILON,
+            "dnda node alpha=0 beta=0",
+        );
     }
 
     #[test]
@@ -749,6 +824,7 @@ mod tests {
         assert_approx(
             aero().dnda(30.0, 20.0),
             -0.001,
+            EPSILON,
             "dnda node alpha=30 beta=20",
         );
     }
@@ -759,6 +835,7 @@ mod tests {
         assert_approx(
             aero().dnda(17.5, -10.0),
             -0.0065,
+            EPSILON,
             "dnda mid alpha=17.5 beta=-10",
         );
     }
@@ -769,7 +846,12 @@ mod tests {
 
     #[test]
     fn dndr_node_alpha0_beta0() {
-        assert_approx(aero().dndr(0.0, 0.0), -0.045, "dndr node alpha=0 beta=0");
+        assert_approx(
+            aero().dndr(0.0, 0.0),
+            -0.045,
+            EPSILON,
+            "dndr node alpha=0 beta=0",
+        );
     }
 
     #[test]
@@ -777,6 +859,7 @@ mod tests {
         assert_approx(
             aero().dndr(25.0, -30.0),
             -0.051,
+            EPSILON,
             "dndr node alpha=25 beta=-30",
         );
     }
@@ -787,6 +870,7 @@ mod tests {
         assert_approx(
             aero().dndr(22.5, 10.0),
             -0.0345,
+            EPSILON,
             "dndr mid alpha=22.5 beta=10",
         );
     }

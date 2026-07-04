@@ -71,45 +71,67 @@ fn temperature_at_altitude(altitude: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::math::test_utils::assert_approx;
+
+    const EPSILON: f64 = 1e-2;
 
     #[test]
     fn temperature_at_mount_everest() {
-        assert_eq!(format!("{:.2}", temperature_at_altitude(8848.0)), "229.36");
+        assert_approx(
+            temperature_at_altitude(8848.0),
+            229.36,
+            EPSILON,
+            "temperature_at_mount_everest",
+        );
     }
 
     #[test]
     fn temperature_at_airliner_cruising_altitude() {
-        assert_eq!(temperature_at_altitude(11000.0), 216.5);
+        assert_approx(
+            temperature_at_altitude(11000.0),
+            216.5,
+            EPSILON,
+            "temperature_at_airliner_cruising_altitude",
+        );
     }
 
     #[test]
     fn temperature_at_sea_level() {
-        assert_eq!(temperature_at_altitude(0.0), 288.15);
+        assert_approx(
+            temperature_at_altitude(0.0),
+            288.15,
+            EPSILON,
+            "temperature_at_sea_level",
+        );
     }
 
     #[test]
     fn speed_of_sound() {
-        assert_eq!(format!("{:.2}", tas_from_mach(1.0, 0.0)), "340.26");
+        assert_approx(tas_from_mach(1.0, 0.0), 340.26, EPSILON, "speed_of_sound");
     }
 
     #[test]
     fn mach_number() {
-        assert_eq!(mach(340.2626485525556, 0.0), 1.0);
+        assert_approx(mach(340.2626485525556, 0.0), 1.0, EPSILON, "mach_number");
     }
 
     #[test]
     fn dynamic_pressure_at_mount_everest() {
-        assert_eq!(
-            format!("{:.2}", dynamic_pressure(300.0, 8848.0)),
-            "21431.37"
+        assert_approx(
+            dynamic_pressure(300.0, 8848.0),
+            21431.37,
+            EPSILON,
+            "dynamic_pressure_at_mount_everest",
         );
     }
 
     #[test]
     fn dynamic_pressure_at_sea_level() {
-        assert_eq!(
-            format!("{:.2}", dynamic_pressure(340.2626485525556, 0.0)),
-            "70914.44"
+        assert_approx(
+            dynamic_pressure(340.2626485525556, 0.0),
+            70914.44,
+            EPSILON,
+            "dynamic_pressure_at_sea_level",
         );
     }
 }

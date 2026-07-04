@@ -294,6 +294,7 @@ impl<Sys, M: TrimTarget<Sys>> TrimProblemBuilderWithInitialParams<Sys, M> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::math::test_utils::assert_approx;
     use crate::model::F16;
     use crate::model::RAD_TO_DEG;
     use crate::model::Transport;
@@ -314,9 +315,9 @@ mod tests {
             .build();
         let (x, u, cost) = problem.trim()?;
         assert!(cost < 1e-6, "trim did not converge: cost = {cost}");
-        assert!((u.throttle() - 0.297).abs() < 5e-3);
-        assert!((u.elevator() + 25.7).abs() < 5e-2);
-        assert!((x.alpha() * RAD_TO_DEG - 22.1).abs() < 5e-2);
+        assert_approx(u.throttle(), 0.297, 5e-3, "throttle");
+        assert_approx(u.elevator(), -25.7, 5e-2, "elevator");
+        assert_approx(x.alpha() * RAD_TO_DEG, 22.1, 5e-2, "alpha");
         Ok(())
     }
 
@@ -333,9 +334,9 @@ mod tests {
             .build();
         let (x, u, cost) = problem.trim()?;
         assert!(cost < 1e-6, "trim did not converge: cost = {cost}");
-        assert!((u.throttle() - 0.293).abs() < 5e-3);
-        assert!((u.elevator() - 2.46).abs() < 5e-2);
-        assert!((x.alpha() * RAD_TO_DEG - 0.58).abs() < 5e-2);
+        assert_approx(u.throttle(), 0.293, 5e-3, "throttle");
+        assert_approx(u.elevator(), 2.46, 5e-2, "elevator");
+        assert_approx(x.alpha() * RAD_TO_DEG, 0.58, 5e-2, "alpha");
         Ok(())
     }
 
@@ -352,9 +353,9 @@ mod tests {
             .build();
         let (x, u, cost) = problem.trim()?;
         assert!(cost < 1e-6, "trim did not converge: cost = {cost}");
-        assert!((u.throttle() - 0.204).abs() < 5e-3);
-        assert!((u.elevator() + 4.1).abs() < 5e-2);
-        assert!((x.alpha() * RAD_TO_DEG - 5.43).abs() < 5e-2);
+        assert_approx(u.throttle(), 0.204, 5e-3, "throttle");
+        assert_approx(u.elevator(), -4.1, 5e-2, "elevator");
+        assert_approx(x.alpha() * RAD_TO_DEG, 5.43, 5e-2, "alpha");
         Ok(())
     }
 
@@ -390,10 +391,10 @@ mod tests {
         // Coordinated turn => essentially zero sideslip.
         assert!(x.beta().abs() * RAD_TO_DEG < 1.0);
         // Bank angle is fixed by the turn-coordination kinematics (~67 deg).
-        assert!((x.phi() * RAD_TO_DEG - 66.9).abs() < 1.0);
+        assert_approx(x.phi() * RAD_TO_DEG, 66.9, 1.0, "phi");
         // Steady-state angle of attack and throttle for the turn.
-        assert!((x.alpha() * RAD_TO_DEG - 7.0).abs() < 0.5);
-        assert!((u.throttle() - 0.334).abs() < 0.03);
+        assert_approx(x.alpha() * RAD_TO_DEG, 7.0, 0.5, "alpha");
+        assert_approx(u.throttle(), 0.334, 0.03, "throttle");
         Ok(())
     }
 }

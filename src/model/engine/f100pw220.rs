@@ -156,6 +156,9 @@ impl Engine for F100PW220 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::math::test_utils::assert_approx;
+
+    const EPSILON: f64 = 1e-6;
 
     #[test]
     fn can_access_luts() {
@@ -167,55 +170,139 @@ mod tests {
     #[test]
     fn different_power_slopes() {
         let f100pw220 = F100PW220::new();
-        assert_eq!(f100pw220.throttle_to_power(0.5), 0.5 * 64.94);
-        assert_eq!(f100pw220.throttle_to_power(0.8), 0.8 * 217.38 - 117.38);
+        assert_approx(
+            f100pw220.throttle_to_power(0.5),
+            0.5 * 64.94,
+            EPSILON,
+            "throttle_to_power(0.5)",
+        );
+        assert_approx(
+            f100pw220.throttle_to_power(0.8),
+            0.8 * 217.38 - 117.38,
+            EPSILON,
+            "throttle_to_power(0.8)",
+        );
     }
 
     #[test]
     fn throttle_to_power_clamps_input() {
         let f100pw220 = F100PW220::new();
-        assert_eq!(f100pw220.throttle_to_power(-1.0), 0.0);
-        assert_eq!(f100pw220.throttle_to_power(2.0), 1.0 * 217.38 - 117.38);
+        assert_approx(
+            f100pw220.throttle_to_power(-1.0),
+            0.0,
+            EPSILON,
+            "throttle_to_power(-1.0)",
+        );
+        assert_approx(
+            f100pw220.throttle_to_power(2.0),
+            1.0 * 217.38 - 117.38,
+            EPSILON,
+            "throttle_to_power(2.0)",
+        );
     }
 
     #[test]
     fn tau_inverse_clamps_input() {
         let f100pw220 = F100PW220::new();
-        assert_eq!(f100pw220.tau_inverse(-1.0), 1.0);
-        assert_eq!(f100pw220.tau_inverse(200.0), 0.1);
+        assert_approx(
+            f100pw220.tau_inverse(-1.0),
+            1.0,
+            EPSILON,
+            "tau_inverse(-1.0)",
+        );
+        assert_approx(
+            f100pw220.tau_inverse(200.0),
+            0.1,
+            EPSILON,
+            "tau_inverse(200.0)",
+        );
     }
 
     #[test]
     fn tau_inverse_for_various_input_ranges() {
         let f100pw220 = F100PW220::new();
-        assert_eq!(f100pw220.tau_inverse(0.0), 1.0);
-        assert_eq!(f100pw220.tau_inverse(30.0), 1.9 - 0.036 * 30.0);
-        assert_eq!(f100pw220.tau_inverse(50.0), 0.1);
-        assert_eq!(f100pw220.tau_inverse(100.0), 0.1);
+        assert_approx(f100pw220.tau_inverse(0.0), 1.0, EPSILON, "tau_inverse(0.0)");
+        assert_approx(
+            f100pw220.tau_inverse(30.0),
+            1.9 - 0.036 * 30.0,
+            EPSILON,
+            "tau_inverse(30.0)",
+        );
+        assert_approx(
+            f100pw220.tau_inverse(50.0),
+            0.1,
+            EPSILON,
+            "tau_inverse(50.0)",
+        );
+        assert_approx(
+            f100pw220.tau_inverse(100.0),
+            0.1,
+            EPSILON,
+            "tau_inverse(100.0)",
+        );
     }
 
     #[test]
     fn power_dynamics_clamps_input() {
         let f100pw220 = F100PW220::new();
-        assert_eq!(f100pw220.power_dynamics(0.0, -1.0), 0.0);
-        assert_eq!(f100pw220.power_dynamics(200.0, 100.0), 0.0);
-        assert_eq!(f100pw220.power_dynamics(100.0, 200.0), 0.0);
-        assert_eq!(f100pw220.power_dynamics(-100.0, 0.0), 0.0);
+        assert_approx(
+            f100pw220.power_dynamics(0.0, -1.0),
+            0.0,
+            EPSILON,
+            "power_dynamics(0.0, -1.0)",
+        );
+        assert_approx(
+            f100pw220.power_dynamics(200.0, 100.0),
+            0.0,
+            EPSILON,
+            "power_dynamics(200.0, 100.0)",
+        );
+        assert_approx(
+            f100pw220.power_dynamics(100.0, 200.0),
+            0.0,
+            EPSILON,
+            "power_dynamics(100.0, 200.0)",
+        );
+        assert_approx(
+            f100pw220.power_dynamics(-100.0, 0.0),
+            0.0,
+            EPSILON,
+            "power_dynamics(-100.0, 0.0)",
+        );
     }
 
     #[test]
     fn different_power_dynamics_slopes() {
         let f100pw220 = F100PW220::new();
-        assert_eq!(f100pw220.power_dynamics(100.0, 10.0), 5.0 * (-60.0));
-        assert_eq!(
-            f100pw220.power_dynamics(0.0, 10.0),
-            f100pw220.tau_inverse(10.0) * 10.0
+        assert_approx(
+            f100pw220.power_dynamics(100.0, 10.0),
+            5.0 * (-60.0),
+            EPSILON,
+            "power_dynamics(100.0, 10.0)",
         );
-        assert_eq!(f100pw220.power_dynamics(100.0, 100.0), 0.0);
-        assert_eq!(f100pw220.power_dynamics(50.0, 100.0), 5.0 * 50.0);
-        assert_eq!(
+        assert_approx(
+            f100pw220.power_dynamics(0.0, 10.0),
+            f100pw220.tau_inverse(10.0) * 10.0,
+            EPSILON,
+            "power_dynamics(0.0, 10.0)",
+        );
+        assert_approx(
+            f100pw220.power_dynamics(100.0, 100.0),
+            0.0,
+            EPSILON,
+            "power_dynamics(100.0, 100.0)",
+        );
+        assert_approx(
+            f100pw220.power_dynamics(50.0, 100.0),
+            5.0 * 50.0,
+            EPSILON,
+            "power_dynamics(50.0, 100.0)",
+        );
+        assert_approx(
             f100pw220.power_dynamics(0.0, 100.0),
-            f100pw220.tau_inverse(100.0) * 60.0
+            f100pw220.tau_inverse(100.0) * 60.0,
+            EPSILON,
+            "power_dynamics(0.0, 100.0)",
         );
     }
 
@@ -233,7 +320,17 @@ mod tests {
     #[test]
     fn thrust_for_various_regimes() {
         let f100pw220 = F100PW220::new();
-        assert!((f100pw220.thrust(30.0, 0.0, 0.2) - 34971.88).abs() < 1e-2); // IDLE/MIL
-        assert!((f100pw220.thrust(85.0, 0.0, 0.2) - 83617.58).abs() < 1e-2); // MIL/MAX
+        assert_approx(
+            f100pw220.thrust(30.0, 0.0, 0.2),
+            34971.88,
+            1e-2,
+            "IDLE/MIL thrust",
+        ); // IDLE/MIL
+        assert_approx(
+            f100pw220.thrust(85.0, 0.0, 0.2),
+            83617.58,
+            1e-2,
+            "MIL/MAX thrust",
+        ); // MIL/MAX
     }
 }
