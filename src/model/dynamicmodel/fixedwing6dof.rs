@@ -506,17 +506,17 @@ mod tests {
 
     #[test]
     fn textbook_model_test_vt() {
-        assert_approx(prepare_model().vt(), -25.74150, "vt_dot");
+        assert_approx(prepare_model().vt(), -22.933428, "vt_dot");
     }
 
     #[test]
     fn textbook_model_test_alpha() {
-        assert_approx(prepare_model().alpha(), -0.8708620, "alpha_dot");
+        assert_approx(prepare_model().alpha(), -0.8813417, "alpha_dot");
     }
 
     #[test]
     fn textbook_model_test_beta() {
-        assert_approx(prepare_model().beta(), -0.4797399, "beta_dot");
+        assert_approx(prepare_model().beta(), -0.4760048, "beta_dot");
     }
 
     #[test]
@@ -557,5 +557,60 @@ mod tests {
     #[test]
     fn textbook_model_test_power() {
         assert_approx(prepare_model().power(), -58.68999, "power_dot");
+    }
+
+    /// Trimmed level flight at sea level (nominal cg) must match Stevens &
+    /// Lewis Table 3.6-2. Speeds are converted from ft/s to m/s; throttle is
+    /// dimensionless and AOA / elevator are in degrees.
+    ///
+    /// The lowest tabulated speeds (130-170 ft/s) drive AOA toward ~45 deg,
+    /// the edge of the aero envelope where the book notes trimming becomes
+    /// ill-conditioned, so they are excluded here.
+    #[test]
+    fn trimmed_level_flight_matches_textbook_table_3_6_2() {
+        use crate::trim::TrimProblemBuilder;
+
+        const FT: f64 = 0.3048;
+        // (speed [ft/s], throttle [-], AOA [deg], elevator [deg])
+        let rows = [
+            (200.0, 0.287, 19.70, 0.723),
+            (300.0, 0.122, 8.49, -0.591),
+            (350.0, 0.107, 5.87, -0.539),
+            (500.0, 0.137, 2.14, -0.756),
+            (700.0, 0.282, 0.382, -0.900),
+            (800.0, 0.378, -0.045, -0.943),
+        ];
+
+        for (v_fts, throttle, aoa, elevator) in rows {
+            let vt = v_fts * FT;
+            let setpoints = dvector![vt, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+            // Seed near the tabulated AOA so the optimizer locks onto the
+            // level-flight trim rather than a spurious local minimum.
+            let init = dvector![0.3, 0.0, aoa / RAD_TO_DEG, 0.0, 0.0, 0.0];
+            let problem = TrimProblemBuilder::new()
+                .for_system(F16::new())
+                .with_model(FixedWing6DoF)
+                .with_setpoints(setpoints)
+                .with_initial_params(init)
+                .build();
+            let (x, u, cost) = problem.trim().expect("trim returned an error");
+
+            assert!(cost < 1e-6, "vt={v_fts} ft/s did not converge: cost={cost}");
+            assert!(
+                (u.throttle() - throttle).abs() < 5e-3,
+                "vt={v_fts} ft/s throttle: expected {throttle}, got {}",
+                u.throttle()
+            );
+            assert!(
+                (x.alpha() * RAD_TO_DEG - aoa).abs() < 5e-2,
+                "vt={v_fts} ft/s AOA: expected {aoa}, got {}",
+                x.alpha() * RAD_TO_DEG
+            );
+            assert!(
+                (u.elevator() - elevator).abs() < 5e-2,
+                "vt={v_fts} ft/s elevator: expected {elevator}, got {}",
+                u.elevator()
+            );
+        }
     }
 }

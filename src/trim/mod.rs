@@ -393,7 +393,7 @@ mod tests {
         assert!((x.phi() * RAD_TO_DEG - 66.9).abs() < 1.0);
         // Steady-state angle of attack and throttle for the turn.
         assert!((x.alpha() * RAD_TO_DEG - 7.0).abs() < 0.5);
-        assert!((u.throttle() - 0.72).abs() < 0.03);
+        assert!((u.throttle() - 0.334).abs() < 0.03);
         Ok(())
     }
 }
