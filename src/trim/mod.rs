@@ -397,4 +397,225 @@ mod tests {
         assert_approx(u.throttle(), 0.334, 0.03, "throttle");
         Ok(())
     }
+
+    #[test]
+    fn trim_6dof_f16_nominal_xcg_035() -> Result<(), Box<dyn std::error::Error>> {
+        let setpoints = dvector![
+            152.9, // vt [m/s]
+            0.0,   // altitude [m]
+            0.0,   // gamma [deg]
+            0.0,   // roll rate [rad/s]
+            0.0,   // pitch rate [rad/s]
+            0.0,   // turn rate [rad/s]
+            0.0,   // phi [rad]
+            0.0,   // coordinated turn flag (0 = none)
+        ];
+        // Xcg = 0.35 is the default in F16::new(), so no extra param needed.
+        let init_params = dvector![
+            0.15,  // throttle — close to expected 0.1385
+            -1.0,  // elevator — close to expected -0.7588 deg
+            0.037, // alpha — close to expected 0.03691 rad
+            0.0,   // aileron
+            0.0,   // rudder
+            0.0,   // beta
+        ];
+
+        let (x, u, cost) = TrimProblemBuilder::new()
+            .for_system(F16::new())
+            .with_model(FixedWing6DoF)
+            .with_setpoints(setpoints)
+            .with_initial_params(init_params)
+            .build()
+            .trim()?;
+
+        assert!(cost < 1e-8, "trim did not converge: cost = {cost:.3e}");
+
+        // State
+        assert_approx(x.alpha(), 0.03691, 1e-3, "alpha [rad]");
+        assert_approx(x.beta(), 0.0, 1e-4, "beta [rad]");
+        assert_approx(x.phi(), 0.0, 1e-6, "phi [rad]");
+        assert_approx(x.theta(), 0.03691, 1e-3, "theta [rad]");
+        assert_approx(x.p(), 0.0, 1e-6, "P [rad/s]");
+        assert_approx(x.q(), 0.0, 1e-6, "Q [rad/s]");
+        assert_approx(x.r(), 0.0, 1e-6, "R [rad/s]");
+
+        // Controls
+        assert_approx(u.throttle(), 0.1385, 1e-3, "throttle");
+        assert_approx(u.elevator(), -0.7588, 5e-3, "elevator [deg]");
+        // AIL and RDR are ~1e-7 deg at trim (numerical noise) — just check near zero
+        assert!(
+            u.aileron().abs() < 1e-3,
+            "aileron should be ~0, got {}",
+            u.aileron()
+        );
+        assert!(
+            u.rudder().abs() < 2e-3,
+            "rudder should be ~0, got {}",
+            u.rudder()
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn trim_6dof_f16_xcg_030() -> Result<(), Box<dyn std::error::Error>> {
+        let setpoints = dvector![
+            152.9, // vt [m/s]
+            0.0,   // altitude [m]
+            0.0,   // gamma [deg]
+            0.0,   // roll rate [rad/s]
+            0.0,   // pitch rate [rad/s]
+            0.0,   // turn rate [rad/s]
+            0.0,   // phi [rad]
+            0.0,   // coordinated turn flag
+            0.30,  // Xcg — adjust index to match your setpoints layout
+        ];
+        let init_params = dvector![
+            0.15,  // throttle
+            -2.0,  // elevator
+            0.039, // alpha
+            0.0,   // aileron
+            0.0,   // rudder
+            0.0,   // beta
+        ];
+
+        let (x, u, cost) = TrimProblemBuilder::new()
+            .for_system(F16::new())
+            .with_model(FixedWing6DoF)
+            .with_setpoints(setpoints)
+            .with_initial_params(init_params)
+            .build()
+            .trim()?;
+
+        assert!(cost < 1e-8, "trim did not converge: cost = {cost:.3e}");
+
+        assert_approx(x.alpha(), 0.03936, 1e-3, "alpha [rad]");
+        assert_approx(x.beta(), 0.0, 1e-6, "beta [rad]");
+        assert_approx(x.phi(), 0.0, 1e-6, "phi [rad]");
+        assert_approx(x.theta(), 0.03936, 1e-3, "theta [rad]");
+        assert_approx(x.p(), 0.0, 1e-6, "P [rad/s]");
+        assert_approx(x.q(), 0.0, 1e-6, "Q [rad/s]");
+        assert_approx(x.r(), 0.0, 1e-6, "R [rad/s]");
+
+        assert_approx(u.throttle(), 0.1485, 1e-3, "throttle");
+        assert_approx(u.elevator(), -1.931, 5e-3, "elevator [deg]");
+        assert!(
+            u.aileron().abs() < 1e-4,
+            "aileron should be ~0, got {}",
+            u.aileron()
+        );
+        assert!(
+            u.rudder().abs() < 1e-3,
+            "rudder should be ~0, got {}",
+            u.rudder()
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn trim_6dof_f16_xcg_038() -> Result<(), Box<dyn std::error::Error>> {
+        let setpoints = dvector![
+            152.9, // vt [m/s]
+            0.0,   // altitude [m]
+            0.0,   // gamma [deg]
+            0.0,   // roll rate [rad/s]
+            0.0,   // pitch rate [rad/s]
+            0.0,   // turn rate [rad/s]
+            0.0,   // phi [rad]
+            0.0,   // coordinated turn flag
+            0.38,  // Xcg — adjust index to match your setpoints layout
+        ];
+        let init_params = dvector![
+            0.13,  // throttle
+            -0.1,  // elevator
+            0.035, // alpha
+            0.0,   // aileron
+            0.0,   // rudder
+            0.0,   // beta
+        ];
+
+        let (x, u, cost) = TrimProblemBuilder::new()
+            .for_system(F16::new())
+            .with_model(FixedWing6DoF)
+            .with_setpoints(setpoints)
+            .with_initial_params(init_params)
+            .build()
+            .trim()?;
+
+        assert!(cost < 1e-8, "trim did not converge: cost = {cost:.3e}");
+
+        assert_approx(x.alpha(), 0.03544, 1e-4, "alpha [rad]");
+        assert_approx(x.beta(), 0.0, 1e-5, "beta [rad]");
+        assert_approx(x.phi(), 0.0, 1e-6, "phi [rad]");
+        assert_approx(x.theta(), 0.03544, 1e-4, "theta [rad]");
+        assert_approx(x.p(), 0.0, 1e-6, "P [rad/s]");
+        assert_approx(x.q(), 0.0, 1e-6, "Q [rad/s]");
+        assert_approx(x.r(), 0.0, 1e-6, "R [rad/s]");
+
+        assert_approx(u.throttle(), 0.1325, 1e-3, "throttle");
+        assert_approx(u.elevator(), -0.05590, 5e-3, "elevator [deg]");
+        assert!(
+            u.aileron().abs() < 1e-4,
+            "aileron should be ~0, got {}",
+            u.aileron()
+        );
+        assert!(
+            u.rudder().abs() < 1e-3,
+            "rudder should be ~0, got {}",
+            u.rudder()
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn trim_6dof_f16_xcg_030_coordinated_turn_03_rads() -> Result<(), Box<dyn std::error::Error>> {
+        let setpoints = dvector![
+            152.9, // vt [m/s]
+            0.0,   // altitude [m]
+            0.0,   // gamma [deg]
+            0.0,   // roll rate — set by CONSTR
+            0.0,   // pitch rate — set by CONSTR
+            0.3,   // turn rate (psi_dot) [rad/s]
+            0.0,   // phi — determined by coordinated turn kinematics
+            1.0,   // coordinated turn flag
+            0.30,  // Xcg
+        ];
+        let init_params = dvector![
+            0.85, // throttle — close to expected 0.8499
+            -6.0, // elevator — close to expected -6.256 deg
+            0.25, // alpha — close to expected 0.2485 rad
+            0.1,  // aileron — close to expected 0.09891 deg
+            -0.4, // rudder — close to expected -0.4218 deg
+            0.0,  // beta — coordinated => ~0
+        ];
+
+        let (x, u, cost) = TrimProblemBuilder::new()
+            .for_system(F16::new())
+            .with_model(FixedWing6DoF)
+            .with_setpoints(setpoints)
+            .with_initial_params(init_params)
+            .build()
+            .trim()?;
+
+        assert!(cost < 1e-6, "trim did not converge: cost = {cost:.3e}");
+
+        // State
+        assert_approx(x.alpha(), 0.2485, 2e-3, "alpha [rad]");
+        assert_approx(x.beta(), 0.0, 1e-3, "beta [rad]"); // coordinated => ~0
+        assert_approx(x.phi(), 1.367, 1e-2, "phi [rad]");
+        assert_approx(x.theta(), 0.05185, 1e-3, "theta [rad]");
+        assert_approx(x.p(), -0.01555, 1e-3, "P [rad/s]");
+        assert_approx(x.q(), 0.2934, 2e-3, "Q [rad/s]");
+        assert_approx(x.r(), 0.06071, 1e-3, "R [rad/s]");
+
+        // Controls
+        assert_approx(u.throttle(), 0.8499, 5e-3, "throttle");
+        assert_approx(u.elevator(), -6.256, 5e-2, "elevator [deg]");
+        assert_approx(u.aileron(), 0.09891, 5e-3, "aileron [deg]");
+        assert_approx(u.rudder(), -0.4218, 5e-3, "rudder [deg]");
+
+        Ok(())
+    }
 }

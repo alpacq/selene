@@ -373,9 +373,9 @@ impl<A: Aerodynamics, E: Engine> TrimTarget<Aircraft<A, E>> for FixedWing6DoF {
         setpoints: &DVector<f64>,
         params: &DVector<f64>,
     ) -> Result<(FixedWing6DoFState, FixedWing6DoFInput), TrimError> {
-        if setpoints.len() != 8 {
+        if setpoints.len() < 8 {
             return Err(TrimError::SetpointsError(
-                "setpoints must have length 8".to_string(),
+                "setpoints must have length 8 or more".to_string(),
             ));
         }
         if params.len() != 6 {
@@ -394,9 +394,12 @@ impl<A: Aerodynamics, E: Engine> TrimTarget<Aircraft<A, E>> for FixedWing6DoF {
         let phi = setpoints[6];
 
         // control inputs vector [throttle, elevator, aileron, rudder]
-        let u = FixedWing6DoFInput {
-            input_vector: dvector![params[0], params[1], params[3], params[4], 0.35],
+        let input_vector = if setpoints.len() > 8 {
+            dvector![params[0], params[1], params[3], params[4], setpoints[8]]
+        } else {
+            dvector![params[0], params[1], params[3], params[4], 0.35]
         };
+        let u = FixedWing6DoFInput { input_vector };
 
         // coordinated turn / skidding turn / non-turning flight
         let (beta, phi, theta, p, q, r) = if setpoints[7] == 1.0 {
