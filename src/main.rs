@@ -34,6 +34,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // simulator.run(
     //     initial_state,
     //     State2Input::new(dvector![0.8]),
+    //     None,
     //     60.0,
     //     TimeStep::new(0.001),
     // );
