@@ -2,6 +2,7 @@
 
 use nalgebra::DVector;
 
+pub mod input_functions;
 pub mod interpolation;
 pub mod timestep;
 

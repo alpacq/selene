@@ -1,3 +1,5 @@
+use nalgebra::DVector;
+
 use crate::math::{SizedVector, timestep::TimeStep};
 use crate::model::DynamicModel;
 
@@ -84,7 +86,7 @@ where
         &mut self,
         initial_state: M::State,
         initial_input: M::Input,
-        input_fn: Option<fn(f64) -> M::Input>,
+        input_fn: Option<fn(&DVector<f64>, f64) -> M::Input>,
         duration: f64,
         dt: TimeStep,
     ) {
@@ -92,13 +94,14 @@ where
         let number_of_steps = (duration / dt.seconds()) as usize;
         let mut time = 0.0_f64;
         let mut state = initial_state;
+        let input_params = initial_input.vector().clone();
         let mut input = initial_input;
 
         self.output = SimOutput::with_capacity(number_of_steps);
 
         for _ in 0..number_of_steps {
             if let Some(f) = input_fn {
-                input = f(time);
+                input = f(&input_params, time);
             }
             state = self.step(state, &input, &dt);
             let mut current_output = Vec::<f64>::with_capacity(system_rank);

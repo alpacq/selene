@@ -360,7 +360,7 @@ mod tests {
     }
 
     #[test]
-    fn test_f16_6dof_model_at_0_altitude_and_152_1_velocity_coordinated_turn()
+    fn test_f16_6dof_model_at_0_altitude_and_152_1_velocity_coordinated_turn_0_15()
     -> Result<(), Box<dyn std::error::Error>> {
         let setpoints = dvector![
             152.1, // vt [m/s]
@@ -395,6 +395,45 @@ mod tests {
         // Steady-state angle of attack and throttle for the turn.
         assert_approx(x.alpha() * RAD_TO_DEG, 7.0, 0.5, "alpha");
         assert_approx(u.throttle(), 0.334, 0.03, "throttle");
+        Ok(())
+    }
+
+    #[test]
+    fn test_f16_6dof_model_at_0_altitude_and_152_1_velocity_coordinated_turn_0_3()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let setpoints = dvector![
+            152.1, // vt [m/s]
+            0.0,   // altitude [m]
+            0.0,   // gamma [deg]
+            0.0,   // roll rate [rad/s]
+            0.0,   // pitch rate [rad/s]
+            0.3,   // turn rate [rad/s]
+            0.0,   // phi [rad] — calculated by solver for coordinated turn
+            1.0,   // setpoint for coordinated turn
+        ];
+        let init_params = dvector![
+            0.2,  // throttle
+            1.0,  // elevator
+            0.02, // alpha
+            1.0,  // aileron
+            1.0,  // rudder
+            0.02, // beta
+        ];
+        let problem = TrimProblemBuilder::new()
+            .for_system(F16::new())
+            .with_model(FixedWing6DoF)
+            .with_setpoints(setpoints)
+            .with_initial_params(init_params)
+            .build();
+        let (x, u, cost) = problem.trim()?;
+        assert!(cost < 1e-6, "trim did not converge: cost = {cost}");
+        // Coordinated turn => essentially zero sideslip.
+        assert!(x.beta().abs() * RAD_TO_DEG < 1.0);
+        // Bank angle is fixed by the turn-coordination kinematics (~78 deg).
+        assert_approx(x.phi() * RAD_TO_DEG, 78.2, 1.0, "phi");
+        // Steady-state angle of attack and throttle for the turn.
+        assert_approx(x.alpha() * RAD_TO_DEG, 13.79, 0.5, "alpha");
+        assert_approx(u.throttle(), 0.835, 0.03, "throttle");
         Ok(())
     }
 
