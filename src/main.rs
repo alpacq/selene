@@ -103,9 +103,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let setpoints = dvector![76.2, 0.0, 0.0]; // setpoints: [vt, altitude, gamma]
     let init_params = dvector![0.1, -10.0, 0.1]; // initial params: [throttle, elevator, alpha]
+
+    let system = Transport::new();
+    let model = FixedWing3DoF;
+
     let problem = TrimProblemBuilder::new()
-        .for_system(Transport::new())
-        .with_model(FixedWing3DoF)
+        .for_system(system)
+        .with_model(model)
         .with_setpoints(setpoints)
         .with_initial_params(init_params)
         .build();
@@ -120,6 +124,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         x.q(),
         x.altitude()
     );
+
+    let system = Transport::new();
+    let model = FixedWing3DoF;
+
+    let mut simulator = SimulatorBuilder::new()
+        .for_system(system)
+        .with_model(model)
+        .with_state(x)
+        .build();
+
+    simulator.run(u, None, 60.0, TimeStep::new(0.001));
 
     Ok(())
 }

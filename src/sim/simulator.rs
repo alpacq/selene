@@ -1,6 +1,6 @@
 use nalgebra::DVector;
 
-use crate::math::{SizedVector, timestep::TimeStep};
+use crate::math::{IntegrableState, SizedVector, timestep::TimeStep};
 use crate::model::DynamicModel;
 
 use crate::sim::output::SimOutput;
@@ -84,7 +84,6 @@ where
     /// * `dt` - The time step to use for the simulation.
     pub fn run(
         &mut self,
-        initial_state: M::State,
         initial_input: M::Input,
         input_fn: Option<fn(&DVector<f64>, f64) -> M::Input>,
         duration: f64,
@@ -93,7 +92,7 @@ where
         let system_rank = self.state.size();
         let number_of_steps = (duration / dt.seconds()) as usize;
         let mut time = 0.0_f64;
-        let mut state = initial_state;
+        let mut state = M::State::from_vector(self.state.vector().clone());
         let input_params = initial_input.vector().clone();
         let mut input = initial_input;
 
@@ -213,8 +212,7 @@ mod tests {
             .build();
         let number_of_steps = (1.0 / 0.001) as usize;
         let input = State2Input::new(dvector![0.8]);
-        let initial_state = simulator.state.clone();
-        simulator.run(initial_state, input, None, 1.0, TimeStep::new(0.001));
+        simulator.run(input, None, 1.0, TimeStep::new(0.001));
         assert_eq!(simulator.output.len(), number_of_steps)
     }
 }
