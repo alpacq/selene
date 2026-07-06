@@ -124,7 +124,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_state(x)
         .build();
 
-    let control_fn = |params: &DVector<f64>, time: f64| -> FixedWing3DoFInput {
+    let elevator_doublet = |params: &DVector<f64>, time: f64| -> FixedWing3DoFInput {
         FixedWing3DoFInput::from_vector(dvector![
             params[0],
             doublet(params[1], 1.0, 0.5, 2.0 / RAD_TO_DEG, time),
@@ -133,7 +133,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ])
     };
 
-    simulator.run(u, Some(control_fn), 60.0, TimeStep::new(0.001));
+    let throttle_doublet = |params: &DVector<f64>, time: f64| -> FixedWing3DoFInput {
+        FixedWing3DoFInput::from_vector(dvector![
+            doublet(params[0], 0.0, 3.0, 0.1, time),
+            params[1],
+            params[2],
+            params[3]
+        ])
+    };
+
+    // simulator.run(u, Some(elevator_doublet), 60.0, TimeStep::new(0.001));
+
+    // state_variables_plot(
+    //     vec![
+    //         FixedWing3DoFStates::Alpha as usize,
+    //         FixedWing3DoFStates::Theta as usize,
+    //     ],
+    //     simulator.output,
+    //     vec!["alpha(t)".into(), "theta(t)".into()],
+    //     "time (s)".into(),
+    //     "angle (rad)".into(),
+    //     "Elevator doublet response".into(),
+    // )
+
+    simulator.run(u, Some(throttle_doublet), 60.0, TimeStep::new(0.001));
 
     state_variables_plot(
         vec![
@@ -144,6 +167,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         vec!["alpha(t)".into(), "theta(t)".into()],
         "time (s)".into(),
         "angle (rad)".into(),
-        "Elevator doublet response".into(),
+        "Throttle doublet response".into(),
     )
 }
