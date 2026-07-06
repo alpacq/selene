@@ -1,3 +1,12 @@
+/// Returns a doublet input function that alternates between two values over a given duration.
+///
+/// # Arguments
+///
+/// * `initial_value` - The initial value of the doublet.
+/// * `start_time` - The time at which the doublet starts.
+/// * `pulse_duration` - The duration of each pulse.
+/// * `pulse_value` - The value of each pulse.
+/// * `time` - The current time.
 pub fn doublet(
     initial_value: f64,
     start_time: f64,

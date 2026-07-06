@@ -1,4 +1,4 @@
-use crate::math::{IntegrableState, SizedVector};
+use crate::math::SizedVector;
 
 pub mod fixedwing3dof;
 pub mod fixedwing6dof;
@@ -8,7 +8,7 @@ pub mod state2;
 ///
 /// The state equations are used to compute the state of the system after one step.
 pub trait DynamicModel<System> {
-    type State: IntegrableState;
+    type State: SizedVector;
     type Input: SizedVector;
     /// Computes the step of model's state equations given the current state and input.
     ///

@@ -5,20 +5,20 @@ pub mod plots;
 pub mod sim;
 pub mod trim;
 
-use nalgebra::dvector;
+use nalgebra::{DVector, dvector};
 
 use crate::{
     error::TrimError::{self, ConvergenceError},
-    math::timestep::TimeStep,
+    math::{SizedVector, input_functions::doublet, timestep::TimeStep},
     model::{
-        F16, Transport, VanDerPol,
+        F16, RAD_TO_DEG, Transport, VanDerPol,
         dynamicmodel::{
-            fixedwing3dof::FixedWing3DoF,
+            fixedwing3dof::{FixedWing3DoF, FixedWing3DoFInput, FixedWing3DoFStates},
             fixedwing6dof::FixedWing6DoF,
             state2::{State2, State2Input, State2State},
         },
     },
-    plots::{phase_portrait, yx},
+    plots::{phase_portrait, state_variables_plot, yx},
     sim::simulator::SimulatorBuilder,
     trim::TrimProblemBuilder,
 };
@@ -115,16 +115,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .build();
     let (x, u, _cost) = problem.trim()?;
 
-    println!("u: {}, {}", u.throttle(), u.elevator());
-    println!(
-        "x: {}, {}, {}, {}, {}",
-        x.vt(),
-        x.alpha(),
-        x.theta(),
-        x.q(),
-        x.altitude()
-    );
-
     let system = Transport::new();
     let model = FixedWing3DoF;
 
@@ -134,7 +124,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_state(x)
         .build();
 
-    simulator.run(u, None, 60.0, TimeStep::new(0.001));
+    let control_fn = |params: &DVector<f64>, time: f64| -> FixedWing3DoFInput {
+        FixedWing3DoFInput::from_vector(dvector![
+            params[0],
+            doublet(params[1], 1.0, 0.5, 2.0 / RAD_TO_DEG, time),
+            params[2],
+            params[3]
+        ])
+    };
 
-    Ok(())
+    simulator.run(u, Some(control_fn), 60.0, TimeStep::new(0.001));
+
+    state_variables_plot(
+        vec![
+            FixedWing3DoFStates::Alpha as usize,
+            FixedWing3DoFStates::Theta as usize,
+        ],
+        simulator.output,
+        vec!["alpha(t)".into(), "theta(t)".into()],
+        "time (s)".into(),
+        "angle (rad)".into(),
+        "Elevator doublet response".into(),
+    )
 }

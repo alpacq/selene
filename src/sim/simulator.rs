@@ -1,6 +1,6 @@
 use nalgebra::DVector;
 
-use crate::math::{IntegrableState, SizedVector, timestep::TimeStep};
+use crate::math::{SizedVector, timestep::TimeStep};
 use crate::model::DynamicModel;
 
 use crate::sim::output::SimOutput;

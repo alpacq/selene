@@ -1,5 +1,5 @@
 use crate::{
-    math::{IntegrableState, SizedVector},
+    math::SizedVector,
     model::{DynamicModel, VanDerPol},
 };
 use nalgebra::{DVector, dvector};
@@ -37,15 +37,12 @@ impl SizedVector for State2State {
     fn vector(&self) -> &DVector<f64> {
         &self.state_vector
     }
-}
 
-impl IntegrableState for State2State {
-    /// Creates a new `State2State` from the given vector
+    // Creates a new `State2State` from the given vector
     fn from_vector(vector: DVector<f64>) -> Self {
         Self::new(vector)
     }
 }
-
 /// Input for the `State2` model
 pub struct State2Input {
     input_vector: DVector<f64>,
@@ -72,6 +69,11 @@ impl SizedVector for State2Input {
     /// Returns a reference to the underlying [`DVector`]
     fn vector(&self) -> &DVector<f64> {
         &self.input_vector
+    }
+
+    // Creates a new `State2Input` from the given vector
+    fn from_vector(vector: DVector<f64>) -> Self {
+        Self::new(vector)
     }
 }
 

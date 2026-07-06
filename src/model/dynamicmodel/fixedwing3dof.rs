@@ -1,6 +1,6 @@
 use crate::{
     error::TrimError,
-    math::{IntegrableState, SizedVector},
+    math::SizedVector,
     model::{
         DynamicModel, GRAVITY, RAD_TO_DEG,
         aerodynamics::Aerodynamics,
@@ -12,6 +12,14 @@ use crate::{
 };
 use nalgebra::{DVector, dvector};
 use num_traits::Pow;
+
+pub enum FixedWing3DoFStates {
+    Vt,
+    Alpha,
+    Theta,
+    Q,
+    Altitude,
+}
 
 /// A struct representing the state of a fixed-wing aircraft in 3D space
 /// for simple longitudinal dynamics
@@ -27,27 +35,27 @@ impl FixedWing3DoFState {
 
     /// TAS [m/s]
     pub fn vt(&self) -> f64 {
-        self.state_vector[0]
+        self.state_vector[FixedWing3DoFStates::Vt as usize]
     }
 
     /// angle of attack [rad]
     pub fn alpha(&self) -> f64 {
-        self.state_vector[1]
+        self.state_vector[FixedWing3DoFStates::Alpha as usize]
     }
 
     /// pitch angle [deg]
     pub fn theta(&self) -> f64 {
-        self.state_vector[2]
+        self.state_vector[FixedWing3DoFStates::Theta as usize]
     }
 
     /// pitch rate [deg/s]
     pub fn q(&self) -> f64 {
-        self.state_vector[3]
+        self.state_vector[FixedWing3DoFStates::Q as usize]
     }
 
     /// altitude [m]
     pub fn altitude(&self) -> f64 {
-        self.state_vector[4]
+        self.state_vector[FixedWing3DoFStates::Altitude as usize]
     }
 }
 
@@ -69,9 +77,7 @@ impl SizedVector for FixedWing3DoFState {
     fn vector(&self) -> &DVector<f64> {
         &self.state_vector
     }
-}
 
-impl IntegrableState for FixedWing3DoFState {
     /// Creates a new FixedWing3DoFState from the given vector
     fn from_vector(vector: DVector<f64>) -> Self {
         FixedWing3DoFState::new(vector)
@@ -123,6 +129,13 @@ impl SizedVector for FixedWing3DoFInput {
     /// The input vector.
     fn vector(&self) -> &DVector<f64> {
         &self.input_vector
+    }
+
+    /// Creates a new FixedWing3DoFInput from the given vector
+    fn from_vector(vector: DVector<f64>) -> Self {
+        FixedWing3DoFInput {
+            input_vector: vector,
+        }
     }
 }
 

@@ -13,11 +13,8 @@ pub trait SizedVector {
 
     /// Returns a reference to the underlying [`DVector`]
     fn vector(&self) -> &DVector<f64>;
-}
 
-/// A trait for integrable states that can be created from [`DVector`]
-pub trait IntegrableState: SizedVector {
-    /// Creates an [`IntegrableState`] from a [`DVector`]
+    /// Creates a [`SizedVector`] from a [`DVector`]
     fn from_vector(vector: DVector<f64>) -> Self;
 }
 

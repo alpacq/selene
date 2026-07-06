@@ -1,6 +1,6 @@
 use crate::{
     error::TrimError,
-    math::{IntegrableState, SizedVector},
+    math::SizedVector,
     model::{
         DynamicModel, GRAVITY, RAD_TO_DEG,
         aerodynamics::Aerodynamics,
@@ -12,6 +12,22 @@ use crate::{
 };
 use nalgebra::{DVector, dvector};
 use num_traits::Pow;
+
+pub enum FixedWing6DoFStates {
+    Vt,
+    Alpha,
+    Beta,
+    Phi,
+    Theta,
+    Psi,
+    P,
+    Q,
+    R,
+    PosN,
+    PosE,
+    Altitude,
+    Power,
+}
 
 /// A struct representing the state of a fixed-wing aircraft in 3D space
 /// for 6-DoF full dynamic model
@@ -27,67 +43,67 @@ impl FixedWing6DoFState {
 
     /// TAS [m/s]
     pub fn vt(&self) -> f64 {
-        self.state_vector[0]
+        self.state_vector[FixedWing6DoFStates::Vt as usize]
     }
 
     /// angle of attack [rad]
     pub fn alpha(&self) -> f64 {
-        self.state_vector[1]
+        self.state_vector[FixedWing6DoFStates::Alpha as usize]
     }
 
     /// sideslip angle [rad]
     pub fn beta(&self) -> f64 {
-        self.state_vector[2]
+        self.state_vector[FixedWing6DoFStates::Beta as usize]
     }
 
     /// roll angle [rad]
     pub fn phi(&self) -> f64 {
-        self.state_vector[3]
+        self.state_vector[FixedWing6DoFStates::Phi as usize]
     }
 
     /// pitch angle [rad]
     pub fn theta(&self) -> f64 {
-        self.state_vector[4]
+        self.state_vector[FixedWing6DoFStates::Theta as usize]
     }
 
     /// yaw angle [rad]
     pub fn psi(&self) -> f64 {
-        self.state_vector[5]
+        self.state_vector[FixedWing6DoFStates::Psi as usize]
     }
 
     /// roll rate [rad/s]
     pub fn p(&self) -> f64 {
-        self.state_vector[6]
+        self.state_vector[FixedWing6DoFStates::P as usize]
     }
 
     /// pitch rate [rad/s]
     pub fn q(&self) -> f64 {
-        self.state_vector[7]
+        self.state_vector[FixedWing6DoFStates::Q as usize]
     }
 
     /// yaw rate [rad/s]
     pub fn r(&self) -> f64 {
-        self.state_vector[8]
+        self.state_vector[FixedWing6DoFStates::R as usize]
     }
 
     /// north position [m]
     pub fn pos_n(&self) -> f64 {
-        self.state_vector[9]
+        self.state_vector[FixedWing6DoFStates::PosN as usize]
     }
 
     /// east position [m]
     pub fn pos_e(&self) -> f64 {
-        self.state_vector[10]
+        self.state_vector[FixedWing6DoFStates::PosE as usize]
     }
 
     /// altitude [m]
     pub fn altitude(&self) -> f64 {
-        self.state_vector[11]
+        self.state_vector[FixedWing6DoFStates::Altitude as usize]
     }
 
     /// power [0..100]
     pub fn power(&self) -> f64 {
-        self.state_vector[12]
+        self.state_vector[FixedWing6DoFStates::Power as usize]
     }
 }
 
@@ -109,9 +125,7 @@ impl SizedVector for FixedWing6DoFState {
     fn vector(&self) -> &DVector<f64> {
         &self.state_vector
     }
-}
 
-impl IntegrableState for FixedWing6DoFState {
     /// Creates a new FixedWing6DoFState from the given vector
     fn from_vector(vector: DVector<f64>) -> Self {
         FixedWing6DoFState::new(vector)
@@ -168,6 +182,13 @@ impl SizedVector for FixedWing6DoFInput {
     /// The input vector.
     fn vector(&self) -> &DVector<f64> {
         &self.input_vector
+    }
+
+    /// Creates a new FixedWing6DoFInput from the given vector
+    fn from_vector(vector: DVector<f64>) -> Self {
+        FixedWing6DoFInput {
+            input_vector: vector,
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 //! Runge-Kutta 4th order integration algorithm
 
-use crate::math::{IntegrableState, timestep::TimeStep};
+use crate::math::{SizedVector, timestep::TimeStep};
 
 /// Integrates the state equations using the Runge-Kutta 4th order method.
 ///
@@ -17,7 +17,7 @@ use crate::math::{IntegrableState, timestep::TimeStep};
 /// Returns the state vector in the next time step.
 pub fn rk4<F, S, St, In>(state_equations: F, system: &S, x: &St, u: &In, dt: &TimeStep) -> St
 where
-    St: IntegrableState,
+    St: SizedVector,
     F: Fn(&S, &St, &In) -> St,
 {
     let dt = dt.seconds();
