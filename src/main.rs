@@ -1,3 +1,5 @@
+use crate::examples::f16_6dof_coordinated_turn_example::f16_6dof_coordinated_turn_example;
+
 pub mod error;
 pub mod examples;
 pub mod math;
@@ -7,5 +9,5 @@ pub mod sim;
 pub mod trim;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    Ok(())
+    f16_6dof_coordinated_turn_example()
 }

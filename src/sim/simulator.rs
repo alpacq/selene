@@ -76,11 +76,10 @@ where
     ///
     /// # Arguments
     ///
-    /// * `initial_state` - The initial state of the simulation.
     /// * `initial_input` - The initial input to the simulation.
     /// * `input_fn` - An optional function to compute the input at each time step.
     ///     If `None`, `initial_input` is used for all time steps.
-    /// * `time` - The total time to simulate.
+    /// * `duration` - The total time to simulate.
     /// * `dt` - The time step to use for the simulation.
     pub fn run(
         &mut self,

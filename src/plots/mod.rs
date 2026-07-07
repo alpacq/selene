@@ -255,3 +255,37 @@ pub fn state_variables_plot(
 
     multiple_plot(x, ys, line_labels, x_axis_label, y_axis_label, title)
 }
+
+/// Plots a state variable against another state variable based on simulation output results.
+///
+/// # Arguments
+///
+/// * `data` - The simulation results to plot.
+/// * `x_variable` - The index of the x-axis variable.
+/// * `y_variable` - The index of the y-axis variable.
+/// * `x_axis_label` - The label for the x-axis.
+/// * `y_axis_label` - The label for the y-axis.
+/// * `title` - The title of the plot.
+///
+/// # Returns
+///
+/// Returns `Ok(())` if the plot is successfully created, or an error if it fails.
+pub fn state_variable_of_state_variable_plot(
+    data: SimOutput,
+    x_variable: usize,
+    y_variable: usize,
+    x_axis_label: String,
+    y_axis_label: String,
+    title: String,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let x_axis_values = data.output_variable_at(x_variable);
+    let y_axis_values = data.output_variable_at(y_variable);
+
+    plot(
+        x_axis_values,
+        y_axis_values,
+        x_axis_label,
+        y_axis_label,
+        title,
+    )
+}
