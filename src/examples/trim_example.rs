@@ -6,6 +6,7 @@ use crate::{
     trim::TrimProblemBuilder,
 };
 
+/// Example of a trim problem for the F-16 model.
 pub fn trim_example() -> Result<(), Box<dyn std::error::Error>> {
     let set_vts = (42..=244).map(|i| i as f64).collect::<Vec<_>>();
     let mut outs = Vec::new();

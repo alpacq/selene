@@ -11,6 +11,7 @@ use crate::{
     trim::TrimProblemBuilder,
 };
 
+/// Example of a throttle doublet input applied to trimmed transport aircraft 3DoF-model.
 pub fn transport_3dof_throttle_doublet_example() -> Result<(), Box<dyn std::error::Error>> {
     let setpoints = dvector![76.2, 0.0, 0.0]; // setpoints: [vt, altitude, gamma]
     let init_params = dvector![0.1, -10.0, 0.1]; // initial params: [throttle, elevator, alpha]

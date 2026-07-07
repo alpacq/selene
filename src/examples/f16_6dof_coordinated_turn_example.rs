@@ -11,6 +11,7 @@ use crate::{
     trim::TrimProblemBuilder,
 };
 
+/// Example of a coordinated turn simulation for trimmed F-16 aircraft 6DoF-model.
 pub fn f16_6dof_coordinated_turn_example() -> Result<(), Box<dyn std::error::Error>> {
     let setpoints = dvector![
         152.1, // vt [m/s]
