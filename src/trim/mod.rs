@@ -1,3 +1,5 @@
+//! Trimming dynamics models in steady state
+
 use argmin::{
     core::{CostFunction, Error, Executor, State},
     solver::neldermead::NelderMead,
@@ -92,27 +94,6 @@ impl<Sys, M> TrimProblem<Sys, M>
 where
     M: TrimTarget<Sys>,
 {
-    /// Returns a builder for creating a trim problem from specific
-    /// system and dynamic model.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use selene::trim::TrimProblem;
-    /// use selene::model::dynamicmodel::State2;
-    /// use selene::model::VanDerPol;
-    ///
-    /// let mut simulator = Simulator::builder()
-    ///     .for_system(VanDerPol {})
-    ///     .with_model(State2 {})
-    ///     .with_setpoints(dvector![])
-    ///     .with_initial_params(dvector![0.1, 0.1])
-    ///     .build();
-    /// ```
-    pub fn builder() -> TrimProblemBuilder {
-        TrimProblemBuilder::new()
-    }
-
     /// Runs the trim and returns the trimmed state, input and final cost.
     ///
     /// A single Nelder-Mead run frequently terminates on a collapsed simplex

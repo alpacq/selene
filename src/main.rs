@@ -2,6 +2,7 @@ use crate::examples::f16_6dof_coordinated_turn_example::f16_6dof_coordinated_tur
 
 pub mod error;
 pub mod examples;
+pub mod linearize;
 pub mod math;
 pub mod model;
 pub mod plots;

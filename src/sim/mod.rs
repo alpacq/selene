@@ -1,4 +1,4 @@
-//! Sim is a crate when flight simulation takes place.
+//! Here a flight simulation takes place.
 
 pub mod output;
 pub mod rk4;

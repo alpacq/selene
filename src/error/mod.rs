@@ -1,3 +1,5 @@
+//! Error types for the selene program.
+
 use std::fmt;
 
 #[derive(Debug)]
@@ -18,3 +20,18 @@ impl fmt::Display for TrimError {
 }
 
 impl std::error::Error for TrimError {}
+
+#[derive(Debug)]
+pub enum LinearizationError {
+    ConvergenceError(String),
+}
+
+impl fmt::Display for LinearizationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            LinearizationError::ConvergenceError(msg) => write!(f, "convergence error: {msg}"),
+        }
+    }
+}
+
+impl std::error::Error for LinearizationError {}

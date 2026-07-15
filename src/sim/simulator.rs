@@ -29,25 +29,6 @@ impl<Sys, M> Simulator<Sys, M>
 where
     M: DynamicModel<Sys>,
 {
-    /// Returns a builder for creating a simulator from specific
-    /// system and dynamic model.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use selene::sim::Simulator;
-    /// use selene::model::dynamicmodel::State2;
-    /// use selene::model::VanDerPol;
-    ///
-    /// let mut simulator = Simulator::builder()
-    ///     .for_system(VanDerPol {})
-    ///     .with_model(State2 {})
-    ///     .with_state(State2State::new(dvector![0.1, 0.1]))
-    ///     .build();
-    /// ```
-    pub fn builder() -> SimulatorBuilder {
-        SimulatorBuilder::new()
-    }
     /// Steps the simulation forward by one time step using the RK4 method.
     ///
     /// # Arguments
