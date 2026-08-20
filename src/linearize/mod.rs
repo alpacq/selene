@@ -21,7 +21,18 @@ where
 }
 
 impl<Sys, M: DynamicModel<Sys>> LinearizationProblem<Sys, M> {
-    pub fn fdx(&self, i: usize, j: usize, delta: f64) -> f64 {
+    /// Computes the partial derivatives of the state vs state (A matrix element)
+    ///
+    /// # Arguments
+    ///
+    /// * `i` - The row index of the A matrix element.
+    /// * `j` - The column index of the A matrix element.
+    /// * `delta` - The finite difference step size.
+    ///
+    /// # Returns
+    ///
+    /// The [i,j] element of A matrix.
+    fn fdx(&self, i: usize, j: usize, delta: f64) -> f64 {
         let mut x_minus = self.x_trimmed.vector().clone();
         let mut x_plus = self.x_trimmed.vector().clone();
         x_minus[j] -= delta;
@@ -39,7 +50,18 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblem<Sys, M> {
         (xd_plus.vector()[i] - xd_minus.vector()[i]) / (2.0 * delta)
     }
 
-    pub fn fdu(&self, i: usize, j: usize, delta: f64) -> f64 {
+    /// Computes the partial derivatives of the state vs input (B matrix element)
+    ///
+    /// # Arguments
+    ///
+    /// * `i` - The row index of the B matrix element.
+    /// * `j` - The column index of the B matrix element.
+    /// * `delta` - The finite difference step size.
+    ///
+    /// # Returns
+    ///
+    /// The [i,j] element of B matrix.
+    fn fdu(&self, i: usize, j: usize, delta: f64) -> f64 {
         let mut u_minus = self.u_trimmed.vector().clone();
         let mut u_plus = self.u_trimmed.vector().clone();
         u_minus[j] -= delta;
@@ -57,6 +79,19 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblem<Sys, M> {
         (xd_plus.vector()[i] - xd_minus.vector()[i]) / (2.0 * delta)
     }
 
+    /// Adaptive algorithm that doesn't use constant delta step,
+    /// but instead adaptively decreases perturbation until reaches convergence.
+    ///
+    /// # Arguments
+    ///
+    /// * `partial_fn` - The function to compute the partial derivative.
+    /// * `i` - The row index of the matrix element.
+    /// * `j` - The column index of the matrix element.
+    /// * `v_j` - The value of the j-th element of th trimmed state or input vector.
+    ///
+    /// # Returns
+    ///
+    /// The computed derivative value.
     fn adaptive_derivative(
         &self,
         partial_fn: impl Fn(usize, usize, f64) -> f64,
@@ -71,7 +106,8 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblem<Sys, M> {
             0.1
         };
         let mut tolerance = 0.1;
-        let (mut a0, mut a1, mut a2) = (0.0, 0.0, 0.0);
+        let mut a0;
+        let (mut a1, mut a2) = (0.0, 0.0);
         let mut best = 0.0;
         let mut best_tolerance = f64::INFINITY;
 
@@ -110,7 +146,12 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblem<Sys, M> {
         }
     }
 
-    pub fn jacobian_A(&self) -> DMatrix<f64> {
+    /// Computes the Jacobian matrix A using adaptive finite difference.
+    ///
+    /// # Returns
+    ///
+    /// The Jacobian matrix A.
+    pub fn jacobian_a(&self) -> DMatrix<f64> {
         let n = self.x_trimmed.vector().len();
         let mut result = DMatrix::<f64>::zeros(n, n);
 
@@ -125,7 +166,12 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblem<Sys, M> {
         result
     }
 
-    pub fn jacobian_B(&self) -> DMatrix<f64> {
+    /// Computes the Jacobian matrix B using adaptive finite difference.
+    ///
+    /// # Returns
+    ///
+    /// The Jacobian matrix B.
+    pub fn jacobian_b(&self) -> DMatrix<f64> {
         let n = self.x_trimmed.vector().len();
         let m = self.u_trimmed.vector().len();
         let mut result = DMatrix::<f64>::zeros(n, m);
