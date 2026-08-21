@@ -273,4 +273,20 @@ impl<A: Aerodynamics, E: Engine> TrimTarget<Aircraft<A, E>> for FixedWing3DoF {
     fn cost(&self, x_dot: &FixedWing3DoFState) -> f64 {
         x_dot.vt().pow(2.0) + 100.0 * x_dot.alpha().pow(2.0) + 10.0 * x_dot.q().pow(2.0)
     }
+
+    /// Penalizes the raw throttle parameter for straying outside `[0, 1]`,
+    /// the range in which [`FixedWing3DoFInput::throttle`] actually affects
+    /// the dynamics (it clamps beyond that). Without this, a trim condition
+    /// that needs more thrust than is available at full throttle leaves the
+    /// optimizer with a flat cost for any throttle > 1.0, so it can drift to
+    /// an arbitrarily large, physically meaningless value (e.g. 1.68 instead
+    /// of ~1.0). Penalizing the excess keeps the trimmed throttle pinned at
+    /// the physical limit, which also keeps it usable as a linearization
+    /// point (perturbations around it then actually probe the clamp edge
+    /// instead of staying entirely inside the saturated region).
+    fn bounds_penalty(&self, u: &FixedWing3DoFInput) -> f64 {
+        let raw_throttle = u.vector()[0];
+        let excess = raw_throttle - raw_throttle.clamp(0.0, 1.0);
+        1.0e4 * excess * excess
+    }
 }

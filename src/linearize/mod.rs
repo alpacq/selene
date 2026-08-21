@@ -120,10 +120,14 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblem<Sys, M> {
                 } else {
                     let d0 = (a0 - a1).abs(); // change between last 2
                     let d1 = (a1 - a2).abs(); // change between previous 2
-                    let b0 = if a0 > a1 { a1 } else { a0 }; //scale to norm d0
-                    let b1 = if a1 > a2 { a2 } else { a1 }; //scale to norm d1
+                    // Scale to the magnitude of the smaller of each pair, regardless of
+                    // sign, so negative derivatives converge just as well as positive
+                    // ones. Floor the scale at TOLERANCE_MIN so near-zero derivatives
+                    // fall back to an absolute (rather than relative) tolerance test.
+                    let b0 = a0.abs().min(a1.abs()).max(TOLERANCE_MIN); //scale to norm d0
+                    let b1 = a1.abs().min(a2.abs()).max(TOLERANCE_MIN); //scale to norm d1
 
-                    if b0 > 0.0 && d0 <= tolerance * b0 && d1 <= tolerance * b1 {
+                    if d0 <= tolerance * b0 && d1 <= tolerance * b1 {
                         best = a1;
                         best_tolerance = tolerance;
                         tolerance *= 0.2;

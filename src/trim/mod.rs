@@ -43,6 +43,27 @@ pub trait TrimTarget<Sys>: DynamicModel<Sys> {
     ///
     /// The cost function value.
     fn cost(&self, x_dot: &Self::State) -> f64;
+
+    /// Optional smooth exterior-penalty term added to the trim cost for raw
+    /// input parameters that get clamped before use in the dynamics (e.g. a
+    /// throttle that only has physical effect over `[0, 1]`).
+    ///
+    /// Nelder-Mead is unconstrained: once a raw parameter drifts past the
+    /// point where the model clamps it, the *physical* cost becomes flat
+    /// with respect to that parameter, so nothing pulls it back towards the
+    /// clamp boundary. Left unchecked, the optimizer can settle on an
+    /// arbitrary, physically meaningless value (e.g. throttle = 1.68 instead
+    /// of ~1.0) which then makes the raw value useless for finite-difference
+    /// linearization around it (perturbations never cross back into the
+    /// unclamped region, so the corresponding B-matrix column comes out
+    /// zero). Overriding this method to penalize the distance between the
+    /// raw and clamped value keeps the trim result pinned at (or just past)
+    /// the physical boundary, without altering the clamp itself.
+    ///
+    /// Default: no penalty (models without clamped inputs don't need it).
+    fn bounds_penalty(&self, _u: &Self::Input) -> f64 {
+        0.0
+    }
 }
 
 /// Builds the initial Nelder-Mead simplex from a single seed point using the
@@ -171,7 +192,7 @@ where
     fn cost(&self, params: &Self::Param) -> Result<Self::Output, Error> {
         let (x, u) = self.model.setup(&self.system, &self.setpoints, params)?;
         let x_dot = self.model.state_equations(&self.system, &x, &u);
-        Ok(self.model.cost(&x_dot))
+        Ok(self.model.cost(&x_dot) + self.model.bounds_penalty(&u))
     }
 }
 

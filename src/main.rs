@@ -1,4 +1,4 @@
-use crate::examples::f16_6dof_coordinated_turn_example::f16_6dof_coordinated_turn_example;
+use crate::examples::transport_3dof_linearization_example::transport_3dof_linearization_example;
 
 pub mod error;
 pub mod examples;
@@ -10,5 +10,5 @@ pub mod sim;
 pub mod trim;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    f16_6dof_coordinated_turn_example()
+    transport_3dof_linearization_example()
 }
