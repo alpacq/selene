@@ -191,7 +191,7 @@ where
     /// Evaluates the cost function of the trim problem for the given parameters.
     fn cost(&self, params: &Self::Param) -> Result<Self::Output, Error> {
         let (x, u) = self.model.setup(&self.system, &self.setpoints, params)?;
-        let x_dot = self.model.state_equations(&self.system, &x, &u);
+        let x_dot = self.model.state_equations(&self.system, &x, &u).0;
         Ok(self.model.cost(&x_dot) + self.model.bounds_penalty(&u))
     }
 }

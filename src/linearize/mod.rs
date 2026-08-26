@@ -37,16 +37,22 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblem<Sys, M> {
         let mut x_plus = self.x_trimmed.vector().clone();
         x_minus[j] -= delta;
         x_plus[j] += delta;
-        let xd_minus = self.model.state_equations(
-            &self.system,
-            &M::State::from_vector(x_minus),
-            &self.u_trimmed,
-        );
-        let xd_plus = self.model.state_equations(
-            &self.system,
-            &M::State::from_vector(x_plus),
-            &self.u_trimmed,
-        );
+        let xd_minus = self
+            .model
+            .state_equations(
+                &self.system,
+                &M::State::from_vector(x_minus),
+                &self.u_trimmed,
+            )
+            .0;
+        let xd_plus = self
+            .model
+            .state_equations(
+                &self.system,
+                &M::State::from_vector(x_plus),
+                &self.u_trimmed,
+            )
+            .0;
         (xd_plus.vector()[i] - xd_minus.vector()[i]) / (2.0 * delta)
     }
 
@@ -66,16 +72,22 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblem<Sys, M> {
         let mut u_plus = self.u_trimmed.vector().clone();
         u_minus[j] -= delta;
         u_plus[j] += delta;
-        let xd_minus = self.model.state_equations(
-            &self.system,
-            &self.x_trimmed,
-            &M::Input::from_vector(u_minus),
-        );
-        let xd_plus = self.model.state_equations(
-            &self.system,
-            &self.x_trimmed,
-            &M::Input::from_vector(u_plus),
-        );
+        let xd_minus = self
+            .model
+            .state_equations(
+                &self.system,
+                &self.x_trimmed,
+                &M::Input::from_vector(u_minus),
+            )
+            .0;
+        let xd_plus = self
+            .model
+            .state_equations(
+                &self.system,
+                &self.x_trimmed,
+                &M::Input::from_vector(u_plus),
+            )
+            .0;
         (xd_plus.vector()[i] - xd_minus.vector()[i]) / (2.0 * delta)
     }
 

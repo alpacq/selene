@@ -139,6 +139,70 @@ impl SizedVector for FixedWing3DoFInput {
     }
 }
 
+/// A struct representing the output of the 3-DoF fixed-wing model
+pub struct FixedWing3DoFOutput {
+    output_vector: DVector<f64>,
+}
+
+impl FixedWing3DoFOutput {
+    /// Creates a new FixedWing3DoFOutput from the given vector
+    pub fn new(output_vector: DVector<f64>) -> Self {
+        FixedWing3DoFOutput { output_vector }
+    }
+
+    /// x-axis acceleration [m/s^2]
+    pub fn ax(&self) -> f64 {
+        self.output_vector[0]
+    }
+
+    /// qbar [m^2/s]
+    pub fn qbar(&self) -> f64 {
+        self.output_vector[1]
+    }
+
+    /// Mach number
+    pub fn mach(&self) -> f64 {
+        self.output_vector[2]
+    }
+
+    /// pitch rate [rad/s]
+    pub fn q(&self) -> f64 {
+        self.output_vector[3]
+    }
+
+    /// angle of attack [deg]
+    pub fn alpha(&self) -> f64 {
+        self.output_vector[4]
+    }
+}
+
+impl SizedVector for FixedWing3DoFOutput {
+    /// Returns the size of the vector
+    ///
+    /// # Returns
+    ///
+    /// The size of the vector
+    fn size(&self) -> usize {
+        5
+    }
+
+    /// Returns a reference to the underlying [`DVector`]
+    ///
+    /// # Returns
+    ///
+    /// A reference to the underlying [`DVector`]
+    fn vector(&self) -> &DVector<f64> {
+        &self.output_vector
+    }
+
+    /// Creates a new FixedWing3DoFOutput from a given vector
+    fn from_vector(vector: DVector<f64>) -> Self {
+        Self {
+            output_vector: vector,
+        }
+    }
+}
+
 /// Simple longitudinal 3 degrees of freedom model
 /// of a fixed-wing aircraft
 /// translation and pitching motion in the vertical plane
@@ -147,6 +211,7 @@ pub struct FixedWing3DoF;
 impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing3DoF {
     type State = FixedWing3DoFState;
     type Input = FixedWing3DoFInput;
+    type Output = FixedWing3DoFOutput;
 
     /// State equations for the 3-DoF simple longitudinal model
     fn state_equations(
@@ -154,7 +219,7 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing3DoF 
         system: &Aircraft<A, E>,
         x: &Self::State,
         u: &Self::Input,
-    ) -> Self::State {
+    ) -> (Self::State, Self::Output) {
         let alpha_deg = RAD_TO_DEG * x.alpha();
         let pressure = dynamic_pressure(x.vt(), x.altitude());
         let mach = mach(x.vt(), x.altitude());
@@ -198,14 +263,17 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing3DoF 
         let x4_derivative = x.vt() * sin_gamma; // h'
         let x5_derivative = x.vt() * cos_gamma; // x'
 
-        FixedWing3DoFState::new(dvector![
-            x0_derivative,
-            x1_derivative,
-            x2_derivative,
-            x3_derivative,
-            x4_derivative,
-            x5_derivative,
-        ])
+        (
+            FixedWing3DoFState::new(dvector![
+                x0_derivative,
+                x1_derivative,
+                x2_derivative,
+                x3_derivative,
+                x4_derivative,
+                x5_derivative,
+            ]),
+            FixedWing3DoFOutput::new(dvector![x0_derivative, pressure, mach, x.q(), x.alpha()]),
+        )
     }
 
     /// Returns the rank of the system (number of state variables)

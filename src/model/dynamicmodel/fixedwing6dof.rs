@@ -192,12 +192,87 @@ impl SizedVector for FixedWing6DoFInput {
     }
 }
 
+/// A struct representing the output of a 6-DoF fixed-wing aircraft dynamic model
+pub struct FixedWing6DoFOutput {
+    output_vector: DVector<f64>,
+}
+
+impl FixedWing6DoFOutput {
+    /// Creates a new FixedWing6DoFOutput from the given vector
+    pub fn new(output_vector: DVector<f64>) -> Self {
+        FixedWing6DoFOutput { output_vector }
+    }
+
+    /// normal acceleration [g]
+    pub fn an(&self) -> f64 {
+        self.output_vector[0]
+    }
+
+    /// lateral acceleration [g]
+    pub fn alat(&self) -> f64 {
+        self.output_vector[1]
+    }
+
+    /// longitudinal acceleration [g]
+    pub fn ax(&self) -> f64 {
+        self.output_vector[2]
+    }
+
+    /// dynamic pressure [Pa]
+    pub fn qbar(&self) -> f64 {
+        self.output_vector[3]
+    }
+
+    /// mach number
+    pub fn mach(&self) -> f64 {
+        self.output_vector[4]
+    }
+
+    /// pitch rate [rad/s]
+    pub fn q(&self) -> f64 {
+        self.output_vector[5]
+    }
+
+    /// angle of attack [rad]
+    pub fn alpha(&self) -> f64 {
+        self.output_vector[6]
+    }
+}
+
+impl SizedVector for FixedWing6DoFOutput {
+    /// Returns the size of the vector
+    ///
+    /// # Returns
+    ///
+    /// The size of the vector, which is 7.
+    fn size(&self) -> usize {
+        7
+    }
+
+    /// Returns a reference to the underlying [`DVector`]
+    ///
+    /// # Returns
+    ///
+    /// A reference to the underlying [`DVector`] containing the output vector.
+    fn vector(&self) -> &DVector<f64> {
+        &self.output_vector
+    }
+
+    /// Creates a FixedWing6DoFOutput from a given vector
+    fn from_vector(vector: DVector<f64>) -> Self {
+        Self {
+            output_vector: vector,
+        }
+    }
+}
+
 /// A struct representing a 6-DoF fixed-wing aircraft dynamic model
 pub struct FixedWing6DoF;
 
 impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing6DoF {
     type State = FixedWing6DoFState;
     type Input = FixedWing6DoFInput;
+    type Output = FixedWing6DoFOutput;
 
     /// State equations for the 6-DoF fixed-wing aircraft model.
     /// Full non-linear model
@@ -206,7 +281,7 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing6DoF 
         system: &Aircraft<A, E>,
         x: &Self::State,
         u: &Self::Input,
-    ) -> Self::State {
+    ) -> (Self::State, Self::Output) {
         // rigid body helper variables
         let xpq =
             system.airframe.ixz * (system.airframe.ixx - system.airframe.iyy + system.airframe.izz);
@@ -333,26 +408,27 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing6DoF 
         let pose_dot = uu * s2 + vv * s4 + ww * s7;
         let altitude_dot = uu * x.theta().sin() - vv * s5 - ww * s8;
 
-        // TODO: telemetry output
+        let an = -az / GRAVITY;
+        let alat = ay / GRAVITY;
 
-        let _an = -az / GRAVITY;
-        let _alat = ay / GRAVITY;
-
-        FixedWing6DoFState::new(dvector![
-            vt_dot,
-            alpha_dot,
-            beta_dot,
-            phi_dot,
-            theta_dot,
-            psi_dot,
-            p_dot,
-            q_dot,
-            r_dot,
-            posn_dot,
-            pose_dot,
-            altitude_dot,
-            power_dot
-        ])
+        (
+            FixedWing6DoFState::new(dvector![
+                vt_dot,
+                alpha_dot,
+                beta_dot,
+                phi_dot,
+                theta_dot,
+                psi_dot,
+                p_dot,
+                q_dot,
+                r_dot,
+                posn_dot,
+                pose_dot,
+                altitude_dot,
+                power_dot
+            ]),
+            FixedWing6DoFOutput::new(dvector![an, alat, vt_dot, pressure, mach, x.q(), x.alpha()]),
+        )
     }
 
     /// Returns the rank of the system (number of state variables)
@@ -517,7 +593,7 @@ mod tests {
 
         let system = FixedWing6DoF {};
 
-        system.state_equations(&F16::new(), &x, &u)
+        system.state_equations(&F16::new(), &x, &u).0
     }
 
     const EPSILON: f64 = 1e-3;

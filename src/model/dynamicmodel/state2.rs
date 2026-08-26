@@ -77,6 +77,40 @@ impl SizedVector for State2Input {
     }
 }
 
+/// Output for the `State2` model
+pub struct State2Output {
+    output_vector: DVector<f64>,
+}
+
+impl State2Output {
+    /// Creates a new `State2Output` with the given output vector
+    pub fn new(output_vector: DVector<f64>) -> Self {
+        Self { output_vector }
+    }
+
+    /// Returns the output value
+    pub fn y(&self) -> f64 {
+        self.output_vector[0]
+    }
+}
+
+impl SizedVector for State2Output {
+    /// Returns the size of the output vector
+    fn size(&self) -> usize {
+        self.output_vector.len()
+    }
+
+    /// Returns a reference to the underlying [`DVector`]
+    fn vector(&self) -> &DVector<f64> {
+        &self.output_vector
+    }
+
+    /// Creates a new `State2Output` from the given vector
+    fn from_vector(vector: DVector<f64>) -> Self {
+        Self::new(vector)
+    }
+}
+
 /// The 2-dimensional dynamic system model
 /// with 1-dimensional input
 pub struct State2;
@@ -84,17 +118,21 @@ pub struct State2;
 impl DynamicModel<VanDerPol> for State2 {
     type State = State2State;
     type Input = State2Input;
+    type Output = State2Output;
 
     fn state_equations(
         &self,
         _system: &VanDerPol,
         x: &Self::State,
         u: &Self::Input,
-    ) -> Self::State {
-        State2State::new(dvector![
-            x.x2(),
-            u.u() * (1.0 - x.x1() * x.x1()) * x.x2() - x.x1()
-        ])
+    ) -> (Self::State, Self::Output) {
+        (
+            State2State::new(dvector![
+                x.x2(),
+                u.u() * (1.0 - x.x1() * x.x1()) * x.x2() - x.x1()
+            ]),
+            State2Output::new(dvector![x.x1()]),
+        )
     }
 
     fn system_rank(&self) -> usize {

@@ -10,6 +10,7 @@ pub mod state2;
 pub trait DynamicModel<System> {
     type State: SizedVector;
     type Input: SizedVector;
+    type Output: SizedVector;
     /// Computes the step of model's state equations given the current state and input.
     ///
     /// # Arguments
@@ -20,7 +21,12 @@ pub trait DynamicModel<System> {
     /// # Returns
     ///
     /// The state of the model after one step.
-    fn state_equations(&self, system: &System, x: &Self::State, u: &Self::Input) -> Self::State;
+    fn state_equations(
+        &self,
+        system: &System,
+        x: &Self::State,
+        u: &Self::Input,
+    ) -> (Self::State, Self::Output);
 
     /// Returns the rank of the system.
     ///

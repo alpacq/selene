@@ -43,7 +43,7 @@ where
     pub fn step(&mut self, state: M::State, input: &M::Input, dt: &TimeStep) -> M::State {
         let state = rk4(
             |system: &Sys, state: &M::State, input: &M::Input| {
-                self.model.state_equations(system, state, input)
+                self.model.state_equations(system, state, input).0
             },
             &self.system,
             &state,
