@@ -281,6 +281,18 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing3DoF 
     fn system_rank(&self) -> usize {
         5
     }
+
+    /// Returns the number of inputs to the system.
+    /// For this 3-DoF simple longitudinal model, the number of inputs is 4.
+    fn num_inputs(&self) -> usize {
+        4
+    }
+
+    /// Returns the number of outputs from the system.
+    /// For this 3-DoF simple longitudinal model, the number of outputs is 5.
+    fn num_outputs(&self) -> usize {
+        5
+    }
 }
 
 impl<A: Aerodynamics, E: Engine> TrimTarget<Aircraft<A, E>> for FixedWing3DoF {

@@ -25,9 +25,9 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblem<Sys, M> {
     ///
     /// # Arguments
     ///
-    /// * `i` - The row index of the A matrix element.
-    /// * `j` - The column index of the A matrix element.
-    /// * `delta` - The finite difference step size.
+    /// * `i` - the row index of the A matrix element.
+    /// * `j` - the column index of the A matrix element.
+    /// * `delta` - the finite difference step size.
     ///
     /// # Returns
     ///
@@ -60,9 +60,9 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblem<Sys, M> {
     ///
     /// # Arguments
     ///
-    /// * `i` - The row index of the B matrix element.
-    /// * `j` - The column index of the B matrix element.
-    /// * `delta` - The finite difference step size.
+    /// * `i` - the row index of the B matrix element.
+    /// * `j` - the column index of the B matrix element.
+    /// * `delta` - the finite difference step size.
     ///
     /// # Returns
     ///
@@ -89,6 +89,76 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblem<Sys, M> {
             )
             .0;
         (xd_plus.vector()[i] - xd_minus.vector()[i]) / (2.0 * delta)
+    }
+
+    /// Computes the partial derivatives of the output vs state (C matrix element)
+    ///
+    /// # Arguments
+    ///
+    /// * `i` - the row index of the C matrix element.
+    /// * `j` - the column index of the C matrix element.
+    /// * `delta` - the finite difference step size
+    ///
+    /// # Returns
+    ///
+    /// The [i,j] element of the C matrix.
+    fn ydx(&self, i: usize, j: usize, delta: f64) -> f64 {
+        let mut x_minus = self.x_trimmed.vector().clone();
+        let mut x_plus = self.x_trimmed.vector().clone();
+        x_minus[j] -= delta;
+        x_plus[j] += delta;
+        let yd_minus = self
+            .model
+            .state_equations(
+                &self.system,
+                &M::State::from_vector(x_minus),
+                &self.u_trimmed,
+            )
+            .1;
+        let yd_plus = self
+            .model
+            .state_equations(
+                &self.system,
+                &M::State::from_vector(x_plus),
+                &self.u_trimmed,
+            )
+            .1;
+        (yd_plus.vector()[i] - yd_minus.vector()[i]) / (2.0 * delta)
+    }
+
+    /// Computes the partial derivatives of the output vs input (D matrix element)
+    ///
+    /// # Arguments
+    ///
+    /// * `i` - the row index of the D matrix element.
+    /// * `j` - the column index of the D matrix element.
+    /// * `delta` - the finite difference step size.
+    ///
+    /// # Returns
+    ///
+    /// The [i,j] element of the D matrix.
+    fn ydu(&self, i: usize, j: usize, delta: f64) -> f64 {
+        let mut u_minus = self.u_trimmed.vector().clone();
+        let mut u_plus = self.u_trimmed.vector().clone();
+        u_minus[j] -= delta;
+        u_plus[j] += delta;
+        let yd_minus = self
+            .model
+            .state_equations(
+                &self.system,
+                &self.x_trimmed,
+                &M::Input::from_vector(u_minus),
+            )
+            .1;
+        let yd_plus = self
+            .model
+            .state_equations(
+                &self.system,
+                &self.x_trimmed,
+                &M::Input::from_vector(u_plus),
+            )
+            .1;
+        (yd_plus.vector()[i] - yd_minus.vector()[i]) / (2.0 * delta)
     }
 
     /// Adaptive algorithm that doesn't use constant delta step,
@@ -168,7 +238,7 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblem<Sys, M> {
     ///
     /// The Jacobian matrix A.
     pub fn jacobian_a(&self) -> DMatrix<f64> {
-        let n = self.x_trimmed.vector().len();
+        let n = self.model.system_rank();
         let mut result = DMatrix::<f64>::zeros(n, n);
 
         for j in 0..n {
@@ -188,14 +258,56 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblem<Sys, M> {
     ///
     /// The Jacobian matrix B.
     pub fn jacobian_b(&self) -> DMatrix<f64> {
-        let n = self.x_trimmed.vector().len();
-        let m = self.u_trimmed.vector().len();
+        let n = self.model.system_rank();
+        let m = self.model.num_inputs();
         let mut result = DMatrix::<f64>::zeros(n, m);
 
         for j in 0..m {
             let v_j = self.u_trimmed.vector()[j];
             for i in 0..n {
                 let partial = |i: usize, j: usize, delta: f64| -> f64 { self.fdu(i, j, delta) };
+                result[(i, j)] = self.adaptive_derivative(partial, i, j, v_j).unwrap_or(0.0);
+            }
+        }
+
+        result
+    }
+
+    /// Computes the Jacobian matrix C using adaptive finite difference.
+    ///
+    /// # Returns
+    ///
+    /// The Jacobian matrix C.
+    pub fn jacobian_c(&self) -> DMatrix<f64> {
+        let p = self.model.num_outputs();
+        let n = self.model.system_rank();
+        let mut result = DMatrix::<f64>::zeros(p, n);
+
+        for j in 0..n {
+            let v_j = self.x_trimmed.vector()[j];
+            for i in 0..p {
+                let partial = |i: usize, j: usize, delta: f64| -> f64 { self.ydx(i, j, delta) };
+                result[(i, j)] = self.adaptive_derivative(partial, i, j, v_j).unwrap_or(0.0);
+            }
+        }
+
+        result
+    }
+
+    /// Computes the Jacobian matrix D using adaptive finite difference.
+    ///
+    /// # Returns
+    ///
+    /// The Jacobian matrix D.
+    pub fn jacobian_d(&self) -> DMatrix<f64> {
+        let p = self.model.num_outputs();
+        let m = self.model.num_inputs();
+        let mut result = DMatrix::<f64>::zeros(p, m);
+
+        for j in 0..m {
+            let v_j = self.u_trimmed.vector()[j];
+            for i in 0..p {
+                let partial = |i: usize, j: usize, delta: f64| -> f64 { self.ydu(i, j, delta) };
                 result[(i, j)] = self.adaptive_derivative(partial, i, j, v_j).unwrap_or(0.0);
             }
         }

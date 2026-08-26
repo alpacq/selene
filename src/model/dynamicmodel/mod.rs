@@ -32,4 +32,10 @@ pub trait DynamicModel<System> {
     ///
     /// The rank is the size of the state vector.
     fn system_rank(&self) -> usize;
+
+    /// Returns the number of inputs to the system.
+    fn num_inputs(&self) -> usize;
+
+    /// Returns the number of outputs from the system.
+    fn num_outputs(&self) -> usize;
 }

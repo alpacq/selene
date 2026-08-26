@@ -138,4 +138,12 @@ impl DynamicModel<VanDerPol> for State2 {
     fn system_rank(&self) -> usize {
         2
     }
+
+    fn num_inputs(&self) -> usize {
+        1
+    }
+
+    fn num_outputs(&self) -> usize {
+        1
+    }
 }

@@ -436,6 +436,18 @@ impl<A: Aerodynamics, E: Engine> DynamicModel<Aircraft<A, E>> for FixedWing6DoF 
     fn system_rank(&self) -> usize {
         13
     }
+
+    /// Returns the number of inputs to the system.
+    /// For this 6-DoF model, the number of inputs is 5.
+    fn num_inputs(&self) -> usize {
+        5
+    }
+
+    /// Returns the number of outputs from the system.
+    /// For this 6-DoF model, the number of outputs is 7.
+    fn num_outputs(&self) -> usize {
+        7
+    }
 }
 
 impl<A: Aerodynamics, E: Engine> TrimTarget<Aircraft<A, E>> for FixedWing6DoF {
