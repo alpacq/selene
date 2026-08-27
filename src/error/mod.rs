@@ -24,12 +24,14 @@ impl std::error::Error for TrimError {}
 #[derive(Debug)]
 pub enum LinearizationError {
     ConvergenceError(String),
+    DimensionMismatch(String),
 }
 
 impl fmt::Display for LinearizationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             LinearizationError::ConvergenceError(msg) => write!(f, "convergence error: {msg}"),
+            LinearizationError::DimensionMismatch(msg) => write!(f, "dimension mismatch: {msg}"),
         }
     }
 }

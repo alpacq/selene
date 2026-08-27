@@ -5,6 +5,7 @@ use nalgebra::DMatrix;
 use crate::error::LinearizationError;
 use crate::math::SizedVector;
 use crate::model::DynamicModel;
+use crate::model::dynamicmodel::linearizeddynamicmodel::LinearizedDynamicModel;
 
 const TOLERANCE_MIN: f64 = 3.3e-5;
 const TOLERANCE_OK: f64 = 8.1e-4;
@@ -314,6 +315,42 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblem<Sys, M> {
 
         result
     }
+
+    pub fn to_linearized_model(
+        &self,
+    ) -> Result<LinearizedDynamicModel<Sys, M>, LinearizationError> {
+        let a = self.jacobian_a();
+        let b = self.jacobian_b();
+        let c = self.jacobian_c();
+        let d = self.jacobian_d();
+
+        let n = self.model.system_rank();
+        if a.nrows() != n {
+            return Err(LinearizationError::DimensionMismatch(format!(
+                "A rows {} ≠ model.system_rank() {}",
+                a.nrows(),
+                n
+            )));
+        }
+        let m = self.model.num_inputs();
+        if b.ncols() != m {
+            return Err(LinearizationError::DimensionMismatch(format!(
+                "B cols {} ≠ model.num_inputs() {}",
+                b.ncols(),
+                m
+            )));
+        }
+        let p = self.model.num_outputs();
+        if c.nrows() != p {
+            return Err(LinearizationError::DimensionMismatch(format!(
+                "C rows {} ≠ model.num_outputs() {}",
+                c.nrows(),
+                p
+            )));
+        }
+
+        LinearizedDynamicModel::new(a, b, c, d)
+    }
 }
 
 /// First step in building the linearization problem process
@@ -392,5 +429,96 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblemBuilderWithTrimmedInputAndSt
             x_trimmed: self.x_trimmed,
             u_trimmed: self.u_trimmed,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::math::test_utils::assert_approx;
+    use crate::model::VanDerPol;
+    use crate::model::dynamicmodel::state2::{State2, State2Input, State2State};
+    use nalgebra::{dmatrix, dvector};
+
+    fn assert_matrix_approx(actual: &DMatrix<f64>, expected: &DMatrix<f64>, label: &str) {
+        assert_eq!(
+            actual.shape(),
+            expected.shape(),
+            "{label}: shape {:?} != {:?}",
+            actual.shape(),
+            expected.shape()
+        );
+        for i in 0..expected.nrows() {
+            for j in 0..expected.ncols() {
+                assert_approx(
+                    actual[(i, j)],
+                    expected[(i, j)],
+                    1e-9,
+                    format!("{label}[{i},{j}]").as_str(),
+                );
+            }
+        }
+    }
+
+    /// The Van der Pol oscillator ẋ = [x2, u(1 - x1²)x2 - x1], y = x1 has the
+    /// analytic Jacobian A = [[0, 1], [-1, u]] at the origin, where B vanishes
+    /// because the damping term is multiplied by x2 = 0.
+    #[test]
+    fn van_der_pol_at_the_origin_matches_the_analytic_jacobian()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let problem = LinearizationProblemBuilder::new()
+            .for_system(VanDerPol {})
+            .with_model(State2)
+            .with_trimmed_input_and_state(
+                State2State::new(dvector![0.0, 0.0]),
+                State2Input::new(dvector![0.8]),
+            )
+            .build();
+
+        let linear = problem.to_linearized_model()?;
+
+        assert_matrix_approx(linear.a(), &dmatrix![0.0, 1.0; -1.0, 0.8], "A");
+        assert_matrix_approx(linear.b(), &dmatrix![0.0; 0.0], "B");
+        assert_matrix_approx(linear.c(), &dmatrix![1.0, 0.0], "C");
+        assert_matrix_approx(linear.d(), &dmatrix![0.0], "D");
+        Ok(())
+    }
+
+    /// Linearizing a model that is already linear must return the original
+    /// matrices, regardless of the point it is linearized about. This exercises
+    /// the finite-difference Jacobians against an exactly known answer.
+    #[test]
+    fn linearizing_a_linear_model_recovers_its_matrices() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let a = dmatrix![0.0, 1.0; -2.0, -3.0];
+        let b = dmatrix![0.0; 1.5];
+        let c = dmatrix![1.0, 0.25];
+        let d = dmatrix![0.5];
+
+        let linear = LinearizedDynamicModel::<VanDerPol, State2>::new(
+            a.clone(),
+            b.clone(),
+            c.clone(),
+            d.clone(),
+        )?;
+
+        // Deliberately off-equilibrium: a linear model has the same Jacobians
+        // everywhere, so the trim point must not influence the result.
+        let problem = LinearizationProblemBuilder::new()
+            .for_system(VanDerPol {})
+            .with_model(linear)
+            .with_trimmed_input_and_state(
+                State2State::new(dvector![0.3, -0.2]),
+                State2Input::new(dvector![0.7]),
+            )
+            .build();
+
+        let relinearized = problem.to_linearized_model()?;
+
+        assert_matrix_approx(relinearized.a(), &a, "A");
+        assert_matrix_approx(relinearized.b(), &b, "B");
+        assert_matrix_approx(relinearized.c(), &c, "C");
+        assert_matrix_approx(relinearized.d(), &d, "D");
+        Ok(())
     }
 }
