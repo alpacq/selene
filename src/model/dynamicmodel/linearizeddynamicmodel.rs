@@ -274,13 +274,42 @@ mod tests {
             TimeStep::new(0.001),
         );
 
-        let final_state = simulator
-            .output
-            .output_vector
-            .last()
-            .expect("simulation produced no output");
+        assert_approx(simulator.state.x1(), 1.0_f64.cos(), 1e-9, "x1(1 s)");
+        assert_approx(simulator.state.x2(), -1.0_f64.sin(), 1e-9, "x2(1 s)");
+    }
 
-        assert_approx(final_state[0], 1.0_f64.cos(), 1e-9, "x1(1 s)");
-        assert_approx(final_state[1], -1.0_f64.sin(), 1e-9, "x2(1 s)");
+    /// With C = [1, 0] and D = 0 the recorded output history must be the first
+    /// state variable, which is what separates it from the state history.
+    #[test]
+    fn recorded_output_history_follows_the_c_matrix() {
+        let oscillator = LinearState2::new(
+            dmatrix![0.0, 1.0; -1.0, 0.0],
+            dmatrix![0.0; 0.0],
+            dmatrix![1.0, 0.0],
+            dmatrix![0.0],
+        )
+        .expect("matrix dimensions are consistent");
+
+        let mut simulator = SimulatorBuilder::new()
+            .for_system(VanDerPol {})
+            .with_model(oscillator)
+            .with_state(State2State::new(dvector![1.0, 0.0]))
+            .build();
+
+        simulator.run(
+            State2Input::new(dvector![0.0]),
+            None,
+            0.5,
+            TimeStep::new(0.001),
+        );
+
+        let states = simulator.output.state_variable_at(0);
+        let outputs = simulator.output.output_variable_at(0);
+
+        assert_eq!(states.len(), outputs.len());
+        for (k, (x1, y)) in states.iter().zip(outputs.iter()).enumerate() {
+            assert_approx(*y, *x1, 1e-12, format!("y[{k}] vs x1[{k}]").as_str());
+        }
+        assert_approx(*outputs.last().unwrap(), 0.5_f64.cos(), 1e-9, "y(0.5 s)");
     }
 }

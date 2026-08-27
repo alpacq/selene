@@ -188,8 +188,8 @@ fn multiple_plot(
 ///
 /// Returns `Ok(())` if the plot is successfully created, or an error if it fails.
 pub fn phase_portrait(data: SimOutput, title: String) -> Result<(), Box<dyn std::error::Error>> {
-    let x_axis_values = data.output_variable_at(0);
-    let y_axis_values = data.output_variable_at(1);
+    let x_axis_values = data.state_variable_at(0);
+    let y_axis_values = data.state_variable_at(1);
     let x_axis_label = "x1".into();
     let y_axis_label = "x2".into();
 
@@ -249,7 +249,7 @@ pub fn state_variables_plot(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut ys = Vec::new();
     for variable in variables {
-        ys.push(data.output_variable_at(variable).clone())
+        ys.push(data.state_variable_at(variable).clone())
     }
     let x = data.time;
 
@@ -278,8 +278,8 @@ pub fn state_variable_of_state_variable_plot(
     y_axis_label: String,
     title: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let x_axis_values = data.output_variable_at(x_variable);
-    let y_axis_values = data.output_variable_at(y_variable);
+    let x_axis_values = data.state_variable_at(x_variable);
+    let y_axis_values = data.state_variable_at(y_variable);
 
     plot(
         x_axis_values,
