@@ -8,7 +8,7 @@ use crate::{
     },
     plots::state_variable_of_state_variable_plot,
     sim::simulator::SimulatorBuilder,
-    trim::TrimProblemBuilder,
+    trim::create_trim_problem_and_trim,
 };
 
 /// Example of a coordinated turn simulation for trimmed F-16 aircraft 6DoF-model.
@@ -32,16 +32,8 @@ pub fn f16_6dof_coordinated_turn_example() -> Result<(), Box<dyn std::error::Err
         0.0,  // beta
     ];
 
-    let system = F16::new();
-    let model = FixedWing6DoF;
-
-    let problem = TrimProblemBuilder::new()
-        .for_system(system)
-        .with_model(model)
-        .with_setpoints(setpoints)
-        .with_initial_params(init_params)
-        .build();
-    let (x, u, _cost) = problem.trim()?;
+    let (x, u, _cost) =
+        create_trim_problem_and_trim(F16::new(), FixedWing6DoF, setpoints, init_params)?;
 
     let system = F16::new();
     let model = FixedWing6DoF;

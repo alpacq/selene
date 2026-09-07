@@ -432,6 +432,32 @@ impl<Sys, M: DynamicModel<Sys>> LinearizationProblemBuilderWithTrimmedInputAndSt
     }
 }
 
+/// Abstraction over the linearization process.
+///
+/// # Inputs:
+/// - `system`: The system to linearize.
+/// - `model`: The model to linearize.
+/// - `x_trimmed`: The trimmed state vector.
+/// - `u_trimmed`: The trimmed input vector.
+///
+/// # Returns:
+/// - `Ok(LinearizedDynamicModel)`: The linearized model.
+/// - `Err(LinearizationError)`: An error occurred during linearization.
+pub fn linearize<Sys, M: DynamicModel<Sys>>(
+    system: Sys,
+    model: M,
+    x_trimmed: M::State,
+    u_trimmed: M::Input,
+) -> Result<LinearizedDynamicModel<Sys, M>, LinearizationError> {
+    let problem = LinearizationProblemBuilder::new()
+        .for_system(system)
+        .with_model(model)
+        .with_trimmed_input_and_state(x_trimmed, u_trimmed)
+        .build();
+
+    problem.to_linearized_model()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

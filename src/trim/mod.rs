@@ -293,6 +293,34 @@ impl<Sys, M: TrimTarget<Sys>> TrimProblemBuilderWithInitialParams<Sys, M> {
     }
 }
 
+/// Creates a trim problem and solves it using the provided model and setpoints.
+///
+/// # Inputs
+///
+/// - `system`: The system to trim.
+/// - `model`: The model to use for trimming.
+/// - `setpoints`: The setpoints to use for trimming.
+/// - `initial_params`: The initial parameters to use for trimming.
+///
+/// # Returns
+///
+/// A `Result` containing the trimmed state, input, and cost.
+pub fn create_trim_problem_and_trim<Sys, M: TrimTarget<Sys>>(
+    system: Sys,
+    model: M,
+    setpoints: DVector<f64>,
+    initial_params: DVector<f64>,
+) -> Result<(M::State, M::Input, f64), Error> {
+    let problem = TrimProblemBuilder::new()
+        .for_system(system)
+        .with_model(model)
+        .with_setpoints(setpoints)
+        .with_initial_params(initial_params)
+        .build();
+
+    problem.trim()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
