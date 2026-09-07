@@ -203,6 +203,40 @@ impl<Sys, M: DynamicModel<Sys>> SimulatorBuilderWithInitialState<Sys, M> {
     }
 }
 
+/// Creates a simulator and runs it
+///
+/// # Inputs
+///
+/// - `system`: The system to simulate.
+/// - `model`: The model to use for the simulation.
+/// - `initial_state`: The initial state of the simulation.
+/// - `initial_input`: The initial input to the simulation.
+/// - `input_fn`: An optional function to generate inputs over time.
+/// - `duration`: The duration of the simulation.
+/// - `dt`: The time step of the simulation.
+///
+/// # Returns
+///
+/// A `Simulator` instance with the simulation output.
+pub fn create_sim_and_run<Sys, M: DynamicModel<Sys>>(
+    system: Sys,
+    model: M,
+    initial_state: M::State,
+    initial_input: M::Input,
+    input_fn: Option<fn(&DVector<f64>, f64) -> M::Input>,
+    duration: f64,
+    dt: TimeStep,
+) -> Simulator<Sys, M> {
+    let mut simulator = SimulatorBuilder::new()
+        .for_system(system)
+        .with_model(model)
+        .with_state(initial_state)
+        .build();
+
+    simulator.run(initial_input, input_fn, duration, dt);
+    simulator
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

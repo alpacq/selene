@@ -7,7 +7,7 @@ use crate::{
         dynamicmodel::fixedwing3dof::{FixedWing3DoF, FixedWing3DoFInput, FixedWing3DoFStates},
     },
     plots::state_variables_plot,
-    sim::simulator::SimulatorBuilder,
+    sim::simulator::create_sim_and_run,
     trim::create_trim_problem_and_trim,
 };
 
@@ -20,15 +20,6 @@ pub fn transport_3dof_throttle_doublet_example() -> Result<(), Box<dyn std::erro
         dvector![0.1, -10.0, 0.1], // initial params: [throttle, elevator, alpha]
     )?;
 
-    let system = Transport::new();
-    let model = FixedWing3DoF;
-
-    let mut simulator = SimulatorBuilder::new()
-        .for_system(system)
-        .with_model(model)
-        .with_state(x)
-        .build();
-
     let throttle_doublet = |params: &DVector<f64>, time: f64| -> FixedWing3DoFInput {
         FixedWing3DoFInput::from_vector(dvector![
             doublet(params[0], 0.0, 3.0, 0.1, time),
@@ -38,7 +29,15 @@ pub fn transport_3dof_throttle_doublet_example() -> Result<(), Box<dyn std::erro
         ])
     };
 
-    simulator.run(u, Some(throttle_doublet), 60.0, TimeStep::new(0.001));
+    let simulator = create_sim_and_run(
+        Transport::new(),
+        FixedWing3DoF,
+        x,
+        u,
+        Some(throttle_doublet),
+        60.0,
+        TimeStep::new(0.001),
+    );
 
     state_variables_plot(
         vec![
