@@ -548,13 +548,8 @@ mod tests {
             0.0,   // beta
         ];
 
-        let (x, u, cost) = TrimProblemBuilder::new()
-            .for_system(F16::new())
-            .with_model(FixedWing6DoF)
-            .with_setpoints(setpoints)
-            .with_initial_params(init_params)
-            .build()
-            .trim()?;
+        let (x, u, cost) =
+            create_trim_problem_and_trim(F16::new(), FixedWing6DoF, setpoints, init_params)?;
 
         assert!(cost < 1e-8, "trim did not converge: cost = {cost:.3e}");
 

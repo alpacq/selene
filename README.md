@@ -2,7 +2,8 @@
 
 This project is a fully functional dynamic systems simulator concentrated on simulating of aerial vehicles.
 
-Selene was developed alongside "Aircraft Control and Simulation - 3rd edition" textbook by Brian L. Stevens, Frank L. Lewis and Eric N. Johnson.
+Selene was developed alongside "Aircraft Control and Simulation - 3rd edition" textbook by Brian L. Stevens, Frank L. Lewis and Eric N. Johnson. Most examples and testcases are based on the examples from the book,
+and corresponding chapters and sections are marked in the commentaries.
 
 ## Naming
 

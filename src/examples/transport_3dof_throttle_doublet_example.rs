@@ -12,6 +12,7 @@ use crate::{
 };
 
 /// Example of a throttle doublet input applied to trimmed transport aircraft 3DoF-model.
+/// Example 3.6-4 from "Aircraft Control and Simulation - 3rd edition" by Brian L. Stevens, Frank L. Lewis and Eric N. Johnson.
 pub fn transport_3dof_throttle_doublet_example() -> Result<(), Box<dyn std::error::Error>> {
     let (x, u, _cost) = create_trim_problem_and_trim(
         Transport::new(),

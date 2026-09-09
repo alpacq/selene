@@ -6,6 +6,7 @@ use crate::{
     trim::create_trim_problem_and_trim,
 };
 
+/// Example 3.7-2 from "Aircraft Control and Simulation - 3rd edition" by Brian L. Stevens, Frank L. Lewis and Eric N. Johnson.
 pub fn f16_6dof_linearization_example_pullup() -> Result<(), Box<dyn std::error::Error>> {
     let pullup_setpoints = dvector![152.4, 0.0, 0.0, 0.0, 0.3, 0.0, 0.0, 0.0];
     let pullup_init_params = dvector![0.2, 1.0, 0.02, 0.0, 0.0, 0.0];
@@ -25,6 +26,7 @@ pub fn f16_6dof_linearization_example_pullup() -> Result<(), Box<dyn std::error:
     Ok(())
 }
 
+/// Example 3.7-3 from "Aircraft Control and Simulation - 3rd edition" by Brian L. Stevens, Frank L. Lewis and Eric N. Johnson.
 pub fn f16_6dof_linearization_example_turn() -> Result<(), Box<dyn std::error::Error>> {
     let turn_setpoints = dvector![152.4, 0.0, 0.0, 0.0, 0.0, 0.3, 0.0, 1.0];
     let turn_init_params = dvector![0.85, -6.0, 0.24, 0.1, -0.4, 0.0];

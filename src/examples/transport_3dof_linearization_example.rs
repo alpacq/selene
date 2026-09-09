@@ -6,6 +6,7 @@ use crate::{
     trim::create_trim_problem_and_trim,
 };
 
+/// Example 3.7-1 from "Aircraft Control and Simulation - 3rd edition" by Brian L. Stevens, Frank L. Lewis and Eric N. Johnson.
 pub fn transport_3dof_linearization_example() -> Result<(), Box<dyn std::error::Error>> {
     // initially we need to trim aircraft in given state
     let (x, u, _cost) = create_trim_problem_and_trim(

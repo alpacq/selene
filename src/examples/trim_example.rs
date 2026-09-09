@@ -7,6 +7,7 @@ use crate::{
 };
 
 /// Example of a trim problem for the F-16 model.
+/// Example 3.6-2 from "Aircraft Control and Simulation - 3rd edition" by Brian L. Stevens, Frank L. Lewis and Eric N. Johnson.
 pub fn trim_example() -> Result<(), Box<dyn std::error::Error>> {
     let set_vts = (42..=244).map(|i| i as f64).collect::<Vec<_>>();
     let mut outs = Vec::new();

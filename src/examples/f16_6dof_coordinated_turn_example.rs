@@ -12,6 +12,7 @@ use crate::{
 };
 
 /// Example of a coordinated turn simulation for trimmed F-16 aircraft 6DoF-model.
+/// Example 3.6-5 from "Aircraft Control and Simulation - 3rd edition" by Brian L. Stevens, Frank L. Lewis and Eric N. Johnson.
 pub fn f16_6dof_coordinated_turn_example() -> Result<(), Box<dyn std::error::Error>> {
     let setpoints = dvector![
         152.1, // vt [m/s]

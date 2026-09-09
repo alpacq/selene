@@ -4,6 +4,7 @@ use nalgebra::DVector;
 
 pub mod input_functions;
 pub mod interpolation;
+pub mod modal_analysis;
 pub mod timestep;
 
 /// A trait for sized vectors that are used for states and inputs

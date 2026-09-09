@@ -11,6 +11,7 @@ use crate::{
 };
 
 /// Example of simulating the dynamic system - Van der Pol Oscillator
+/// Example 3.4-1 from "Aircraft Control and Simulation - 3rd edition" by Brian L. Stevens, Frank L. Lewis and Eric N. Johnson.
 pub fn vanderpol_example() -> Result<(), Box<dyn std::error::Error>> {
     let simulator = create_sim_and_run(
         VanDerPol {},
