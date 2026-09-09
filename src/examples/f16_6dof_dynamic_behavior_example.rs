@@ -2,6 +2,7 @@ use nalgebra::dvector;
 
 use crate::{
     linearize::linearize,
+    math::modal_analysis::{get_6dof_lateral, get_6dof_longitudal},
     model::{F16, dynamicmodel::fixedwing6dof::FixedWing6DoF},
     trim::create_trim_problem_and_trim,
 };
@@ -9,15 +10,15 @@ use crate::{
 /// Example from section 3.8 from "Aircraft Control and Simulation - 3rd edition" by Brian L. Stevens, Frank L. Lewis and Eric N. Johnson.
 pub fn f16_6dof_dynamic_behavior_example() -> Result<(), Box<dyn std::error::Error>> {
     let setpoints = dvector![
-        152.9, // vt [m/s]
-        0.0,   // altitude [m]
-        0.0,   // gamma [deg]
-        0.0,   // roll rate [rad/s]
-        0.0,   // pitch rate [rad/s]
-        0.0,   // turn rate [rad/s]
-        0.0,   // phi [rad]
-        0.0,   // coordinated turn flag
-        0.30,  // Xcg — adjust index to match your setpoints layout
+        153.01, // vt [m/s] — 502 ft/s
+        0.0,    // altitude [m]
+        0.0,    // gamma [deg]
+        0.0,    // roll rate [rad/s]
+        0.0,    // pitch rate [rad/s]
+        0.0,    // turn rate [rad/s]
+        0.0,    // phi [rad]
+        0.0,    // coordinated turn flag
+        0.30,   // Xcg
     ];
     let init_params = dvector![
         0.15,  // throttle
@@ -33,7 +34,11 @@ pub fn f16_6dof_dynamic_behavior_example() -> Result<(), Box<dyn std::error::Err
 
     let linearized = linearize(F16::new(), FixedWing6DoF, x, u)?;
 
-    let _a = linearized.a();
+    let longitudal = get_6dof_longitudal(linearized.a());
+    let lateral = get_6dof_lateral(linearized.a());
+
+    eprintln!("Longitudal matrix:\n{:.9}", longitudal);
+    eprintln!("Lateral matrix:\n{:.9}", lateral);
 
     Ok(())
 }

@@ -1,6 +1,4 @@
-use crate::examples::f16_6dof_linearization_example::{
-    f16_6dof_linearization_example_pullup, f16_6dof_linearization_example_turn,
-};
+use crate::examples::f16_6dof_dynamic_behavior_example::f16_6dof_dynamic_behavior_example;
 
 pub mod error;
 pub mod examples;
@@ -12,7 +10,6 @@ pub mod sim;
 pub mod trim;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    f16_6dof_linearization_example_pullup()?;
-    f16_6dof_linearization_example_turn()?;
+    f16_6dof_dynamic_behavior_example()?;
     Ok(())
 }
