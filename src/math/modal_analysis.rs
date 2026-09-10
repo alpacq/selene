@@ -1,4 +1,6 @@
-use nalgebra::DMatrix;
+use std::f64::consts::{LN_2, PI};
+
+use nalgebra::{Complex, DMatrix, DVector};
 
 /// Extracts the square submatrix formed by the given state indices, keeping
 /// only the rows *and* columns that belong to the reduced state set.
@@ -22,6 +24,40 @@ pub fn get_6dof_longitudal(a: &DMatrix<f64>) -> DMatrix<f64> {
 pub fn get_6dof_lateral(a: &DMatrix<f64>) -> DMatrix<f64> {
     get_a_submatrix(a, &[2, 3, 6, 8])
 }
+
+/// Returns the mode period (in seconds) for the given eigenvalue
+/// T = 2π / ω
+fn calculate_mode_period(eigenvalue: Complex<f64>) -> f64 {
+    2.0 * PI / eigenvalue.im.abs()
+}
+
+/// Returns the natural frequency (in Hz) for the given eigenvalue
+/// ωₙ = √(σ² + ω²)
+fn calculate_natural_frequency(eigenvalue: Complex<f64>) -> f64 {
+    (eigenvalue.re * eigenvalue.re + eigenvalue.im * eigenvalue.im).sqrt()
+}
+
+/// Returns the damping ratio for the given eigenvalue
+/// ζ = -σ / √(σ² + ω²)
+fn calculate_damping_ratio(eigenvalue: Complex<f64>) -> f64 {
+    -1.0 * eigenvalue.re / calculate_natural_frequency(eigenvalue)
+}
+
+/// Returns the time constant for the given eigenvalue
+/// τ = -1 / λ
+fn calculate_time_constant(eigenvalue: Complex<f64>) -> f64 {
+    -1.0 / eigenvalue.re
+}
+
+/// Returns the amplitude doubling time for the given eigenvalue
+/// calculated only for unstable eigenvalues (σ > 0)
+/// t₂ = ln(2) / σ
+fn calculate_amplitude_doubling_time(eigenvalue: Complex<f64>) -> f64 {
+    LN_2 / eigenvalue.re
+}
+
+/// Performs modal analysis of the given eigenvalues
+pub fn perform_modal_analysis(eigenvalues: DVector<Complex<f64>>) {}
 
 #[cfg(test)]
 mod tests {
