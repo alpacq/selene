@@ -2,62 +2,149 @@ use std::f64::consts::{LN_2, PI};
 
 use nalgebra::{Complex, DMatrix, DVector};
 
-/// Extracts the square submatrix formed by the given state indices, keeping
-/// only the rows *and* columns that belong to the reduced state set.
-///
-/// This is valid because a finite-difference partial derivative `∂ẋᵢ/∂xⱼ` is
-/// evaluated independently of the other state dimensions, so slicing the
-/// full Jacobian gives exactly the same numbers as building a dedicated
-/// reduced-order model would.
+const IMAG_EPSILON: f64 = 1e-6;
+const SHORT_PERIOD_PHUGOID_SPLIT_S: f64 = 15.0;
+const ROLL_SUBSIDENCE_MAX_TAU_S: f64 = 1.0;
+const SPIRAL_MIN_TAU_S: f64 = 20.0;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Axis {
+    Longitudinal,
+    Lateral,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ModeKind {
+    ShortPeriod,
+    Phugoid,
+    DutchRoll,
+    RollSubsidence,
+    Spiral,
+    Unclassified,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct ModeAnalysis {
+    pub eigenvalue: Complex<f64>,
+    pub natural_frequency: f64,
+    pub period: Option<f64>,
+    pub damping_ratio: Option<f64>,
+    pub doubling_time: Option<f64>,
+    pub time_constant: Option<f64>,
+    pub stable: bool,
+    pub kind: ModeKind,
+}
+
 fn get_a_submatrix(a: &DMatrix<f64>, indices: &[usize]) -> DMatrix<f64> {
     a.select_rows(indices).select_columns(indices)
 }
 
-/// Longitudinal states: `Vt, Alpha, Theta, Q` (indices 0, 1, 4, 7 in
-/// [`FixedWing6DoFStates`](crate::model::dynamicmodel::fixedwing6dof::FixedWing6DoFStates)).
 pub fn get_6dof_longitudal(a: &DMatrix<f64>) -> DMatrix<f64> {
     get_a_submatrix(a, &[0, 1, 4, 7])
 }
 
-/// Lateral-directional states: `Beta, Phi, P, R` (indices 2, 3, 6, 8 in
-/// [`FixedWing6DoFStates`](crate::model::dynamicmodel::fixedwing6dof::FixedWing6DoFStates)).
 pub fn get_6dof_lateral(a: &DMatrix<f64>) -> DMatrix<f64> {
     get_a_submatrix(a, &[2, 3, 6, 8])
 }
 
-/// Returns the mode period (in seconds) for the given eigenvalue
-/// T = 2π / ω
 fn calculate_mode_period(eigenvalue: Complex<f64>) -> f64 {
     2.0 * PI / eigenvalue.im.abs()
 }
 
-/// Returns the natural frequency (in Hz) for the given eigenvalue
-/// ωₙ = √(σ² + ω²)
 fn calculate_natural_frequency(eigenvalue: Complex<f64>) -> f64 {
     (eigenvalue.re * eigenvalue.re + eigenvalue.im * eigenvalue.im).sqrt()
 }
 
-/// Returns the damping ratio for the given eigenvalue
-/// ζ = -σ / √(σ² + ω²)
 fn calculate_damping_ratio(eigenvalue: Complex<f64>) -> f64 {
     -1.0 * eigenvalue.re / calculate_natural_frequency(eigenvalue)
 }
 
-/// Returns the time constant for the given eigenvalue
-/// τ = -1 / λ
 fn calculate_time_constant(eigenvalue: Complex<f64>) -> f64 {
     -1.0 / eigenvalue.re
 }
 
-/// Returns the amplitude doubling time for the given eigenvalue
-/// calculated only for unstable eigenvalues (σ > 0)
-/// t₂ = ln(2) / σ
 fn calculate_amplitude_doubling_time(eigenvalue: Complex<f64>) -> f64 {
     LN_2 / eigenvalue.re
 }
 
-/// Performs modal analysis of the given eigenvalues
-pub fn perform_modal_analysis(eigenvalues: DVector<Complex<f64>>) {}
+fn determine_mode_stability(eigenvalue: Complex<f64>) -> bool {
+    eigenvalue.re < 0.0
+}
+
+fn classify_complex_mode(axis: Axis, period: f64) -> ModeKind {
+    match axis {
+        Axis::Longitudinal if period < SHORT_PERIOD_PHUGOID_SPLIT_S => ModeKind::ShortPeriod,
+        Axis::Longitudinal => ModeKind::Phugoid,
+        Axis::Lateral => ModeKind::DutchRoll,
+    }
+}
+
+fn classify_real_mode(axis: Axis, stable: bool, time_constant: f64) -> ModeKind {
+    if axis != Axis::Lateral || !stable {
+        return ModeKind::Unclassified;
+    }
+    if time_constant < ROLL_SUBSIDENCE_MAX_TAU_S {
+        ModeKind::RollSubsidence
+    } else if time_constant > SPIRAL_MIN_TAU_S {
+        ModeKind::Spiral
+    } else {
+        ModeKind::Unclassified
+    }
+}
+
+pub fn perform_modal_analysis(
+    axis: Axis,
+    eigenvalues: &DVector<Complex<f64>>,
+) -> Vec<ModeAnalysis> {
+    let mut modes = Vec::new();
+
+    for eigenvalue in eigenvalues.iter().copied() {
+        if eigenvalue.im.abs() < IMAG_EPSILON || eigenvalue.im < 0.0 {
+            continue;
+        }
+
+        let stable = determine_mode_stability(eigenvalue);
+        let period = calculate_mode_period(eigenvalue);
+        let (damping_ratio, doubling_time) = if stable {
+            (Some(calculate_damping_ratio(eigenvalue)), None)
+        } else {
+            (None, Some(calculate_amplitude_doubling_time(eigenvalue)))
+        };
+
+        modes.push(ModeAnalysis {
+            eigenvalue,
+            natural_frequency: calculate_natural_frequency(eigenvalue),
+            period: Some(period),
+            damping_ratio,
+            doubling_time,
+            time_constant: None,
+            stable,
+            kind: classify_complex_mode(axis, period),
+        });
+    }
+
+    for eigenvalue in eigenvalues.iter().copied() {
+        if eigenvalue.im.abs() >= IMAG_EPSILON {
+            continue;
+        }
+
+        let stable = determine_mode_stability(eigenvalue);
+        let time_constant = calculate_time_constant(eigenvalue);
+
+        modes.push(ModeAnalysis {
+            eigenvalue,
+            natural_frequency: calculate_natural_frequency(eigenvalue),
+            period: None,
+            damping_ratio: None,
+            doubling_time: None,
+            time_constant: Some(time_constant),
+            stable,
+            kind: classify_real_mode(axis, stable, time_constant),
+        });
+    }
+
+    modes
+}
 
 #[cfg(test)]
 mod tests {
